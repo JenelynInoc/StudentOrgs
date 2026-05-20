@@ -2,28 +2,33 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'organization_id',
+        'created_by',
         'title',
         'description',
-        'location',
-        'start_time',
-        'end_time',
+        'start_at',
+        'end_at',
+        'venue',
         'status',
+        'qr_token',
     ];
 
     protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
+        'status' => 'string',
     ];
 
     public function organization(): BelongsTo
@@ -31,8 +36,14 @@ class Event extends Model
         return $this->belongsTo(Organization::class);
     }
 
-    public function participations(): HasMany
+    public function creator(): BelongsTo
     {
-        return $this->hasMany(EventParticipation::class);
+        return $this->belongsTo(Admin::class, 'created_by');
+    }
+
+    public function attendance(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
     }
 }
+

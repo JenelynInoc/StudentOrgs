@@ -2,19 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Announcement extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'organization_id',
+        'created_by',
         'title',
-        'content',
-        'posted_by',
+        'body',
+        'is_pinned',
+    ];
+
+    protected $casts = [
+        'is_pinned' => 'boolean',
     ];
 
     public function organization(): BelongsTo
@@ -22,8 +29,9 @@ class Announcement extends Model
         return $this->belongsTo(Organization::class);
     }
 
-    public function author(): BelongsTo
+    public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'posted_by');
+        return $this->belongsTo(Admin::class, 'created_by');
     }
 }
+

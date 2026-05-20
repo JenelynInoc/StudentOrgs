@@ -1,859 +1,412 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/axios';
-import { Category, Organization, Event } from '@/types';
-import {
-  ShieldCheck, Users, BookOpen, LayoutDashboard, LogOut, Plus,
-  X, MapPin, Calendar, AlertCircle, Building2, Trash2, Check, Eye
+import { useAdminAuthStore } from '@/store/adminAuthStore';
+import api from '@/services/api';
+import { 
+  Users, 
+  Building2, 
+  Calendar, 
+  AlertCircle, 
+  UserX, 
+  ArrowUpRight, 
+  Clock, 
+  Activity,
+  CalendarDays,
+  ChevronRight
 } from 'lucide-react';
+import Link from 'next/link';
+
+interface DashboardStats {
+  total_users: number;
+  total_organizations: number;
+  total_events: number;
+  pending_approvals: number;
+  suspended_users: number;
+  events_by_status: Record<string, number>;
+  organizations_by_status: Record<string, number>;
+}
+
+interface ActivityLog {
+  id: string;
+  user?: { name: string; email: string };
+  action: string;
+  description: string;
+  ip_address: string;
+  created_at: string;
+}
+
+interface EventItem {
+  id: string;
+  title: string;
+  venue: string;
+  start_at: string;
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  organization?: { name: string; acronym?: string };
+}
 
 export default function AdminDashboardPage() {
-  const { user, loading: authLoading, logout } = useAuth();
   const router = useRouter();
+  const { admin } = useAdminAuthStore();
 
-  const [activeTab, setActiveTab] = useState('home');
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Data states
-  const [dashboardStats, setDashboardStats] = useState<any>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [allUsers, setAllUsers] = useState<any[]>([]);
-
-  // Organization Members Management Modal
-  const [showMembersModal, setShowMembersModal] = useState(false);
-  const [selectedOrgDetails, setSelectedOrgDetails] = useState<any>(null);
-  const [membersModalLoading, setMembersModalLoading] = useState(false);
-
-  // Category Modal
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatDesc, setNewCatDesc] = useState('');
-
-  // Organization Modal
-  const [showOrgModal, setShowOrgModal] = useState(false);
-  const [newOrgName, setNewOrgName] = useState('');
-  const [newOrgAcronym, setNewOrgAcronym] = useState('');
-  const [newOrgDesc, setNewOrgDesc] = useState('');
-  const [newOrgCatId, setNewOrgCatId] = useState('');
-
-  // Banner
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-
-  // Redirect if not admin
-  useEffect(() => {
-    if (!authLoading && (!user || user.role !== 'admin')) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
-
-  const loadDashboardData = async () => {
-    if (!user) return;
+  const fetchDashboardData = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const [statsRes, catsRes, orgsRes, usersRes] = await Promise.all([
-        api.get('/dashboard-stats'),
-        api.get('/categories'),
-        api.get('/organizations'),
-        api.get('/users'),
+      const [overviewRes, logsRes, eventsRes] = await Promise.all([
+        api.get('/admin/reports/overview'),
+        api.get('/admin/activity-logs?per_page=5'),
+        api.get('/admin/events?per_page=5')
       ]);
-      setDashboardStats(statsRes.data);
-      setCategories(catsRes.data);
-      setOrganizations(orgsRes.data);
-      setAllUsers(usersRes.data);
-    } catch (err) {
-      console.error('Failed to load admin dashboard', err);
-      showBanner('Failed to retrieve dashboard content.', 'error');
+
+      setStats(overviewRes.data.data);
+      setLogs(logsRes.data.data);
+      setEvents(eventsRes.data.data);
+    } catch (err: any) {
+      console.error('Error fetching dashboard content:', err);
+      setError(err.response?.data?.message || 'Failed to populate dashboard stats.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user && user.role === 'admin') {
-      loadDashboardData();
-    }
-  }, [user]);
+    fetchDashboardData();
+  }, []);
 
-  const showBanner = (text: string, type: 'success' | 'error') => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage(null), 5000);
-  };
-
-  // ===== Admin Actions =====
-  const handleCreateCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await api.post('/categories', { name: newCatName, description: newCatDesc });
-      showBanner('Category created successfully.', 'success');
-      setNewCatName('');
-      setNewCatDesc('');
-      setShowCategoryModal(false);
-      loadDashboardData();
-    } catch (err: any) {
-      showBanner(err.response?.data?.message || 'Failed to create category.', 'error');
-    }
-  };
-
-  const handleDeleteCategory = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
-    try {
-      await api.delete(`/categories/${id}`);
-      showBanner('Category deleted successfully.', 'success');
-      loadDashboardData();
-    } catch (err) {
-      showBanner('Failed to delete category.', 'error');
-    }
-  };
-
-  const handleCreateOrganization = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await api.post('/organizations', {
-        name: newOrgName,
-        acronym: newOrgAcronym,
-        description: newOrgDesc,
-        category_id: parseInt(newOrgCatId),
-      });
-      showBanner('Organization created successfully.', 'success');
-      setNewOrgName('');
-      setNewOrgAcronym('');
-      setNewOrgDesc('');
-      setNewOrgCatId('');
-      setShowOrgModal(false);
-      loadDashboardData();
-    } catch (err: any) {
-      showBanner(err.response?.data?.message || 'Failed to create organization.', 'error');
-    }
-  };
-
-  const handleDeleteOrganization = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this organization?')) return;
-    try {
-      await api.delete(`/organizations/${id}`);
-      showBanner('Organization deleted successfully.', 'success');
-      loadDashboardData();
-    } catch (err) {
-      showBanner('Failed to delete organization.', 'error');
-    }
-  };
-
-  // ===== Org Membership Management Actions for Admin =====
-  const handleOpenMembersModal = async (orgId: number) => {
-    setMembersModalLoading(true);
-    setShowMembersModal(true);
-    try {
-      const res = await api.get(`/organizations/${orgId}`);
-      setSelectedOrgDetails(res.data);
-    } catch (err) {
-      showBanner('Failed to load organization details.', 'error');
-      setShowMembersModal(false);
-    } finally {
-      setMembersModalLoading(false);
-    }
-  };
-
-  const refreshModalDetails = async (orgId: number) => {
-    try {
-      const res = await api.get(`/organizations/${orgId}`);
-      setSelectedOrgDetails(res.data);
-      loadDashboardData();
-    } catch (err) {
-      console.error('Failed to refresh modal details', err);
-    }
-  };
-
-  const handleAdminUpdateMembershipStatus = async (membershipId: number, status: 'approved' | 'rejected') => {
-    if (!selectedOrgDetails?.organization) return;
-    try {
-      await api.put(`/memberships/${membershipId}/status`, { status });
-      showBanner(`Membership request ${status}.`, 'success');
-      refreshModalDetails(selectedOrgDetails.organization.id);
-    } catch (err) {
-      showBanner('Failed to update membership status.', 'error');
-    }
-  };
-
-  const handleAdminAssignOfficerRole = async (membershipId: number, makeOfficer: boolean) => {
-    if (!selectedOrgDetails?.organization) return;
-    try {
-      if (makeOfficer) {
-        const title = prompt('Enter officer title (e.g. President, Vice President, Treasurer):');
-        if (title === null) return;
-        await api.put(`/memberships/${membershipId}/role`, { role: 'officer', officer_title: title || 'Officer' });
-      } else {
-        if (!confirm('Are you sure you want to demote this officer to regular member?')) return;
-        await api.put(`/memberships/${membershipId}/role`, { role: 'member' });
-      }
-      showBanner('Member role updated successfully.', 'success');
-      refreshModalDetails(selectedOrgDetails.organization.id);
-    } catch (err) {
-      showBanner('Failed to update role.', 'error');
-    }
-  };
-
-  const handleAdminRemoveMember = async (membershipId: number) => {
-    if (!selectedOrgDetails?.organization) return;
-    if (!confirm('Are you sure you want to remove this member from the organization?')) return;
-    try {
-      await api.delete(`/memberships/${membershipId}`);
-      showBanner('Member removed successfully.', 'success');
-      refreshModalDetails(selectedOrgDetails.organization.id);
-    } catch (err) {
-      showBanner('Failed to remove member.', 'error');
-    }
-  };
-
-  const handleChangeUserRole = async (userId: number, newRole: string) => {
-    try {
-      await api.put(`/users/${userId}/role`, { role: newRole });
-      showBanner('User role updated successfully.', 'success');
-      loadDashboardData();
-    } catch (err: any) {
-      showBanner(err.response?.data?.message || 'Failed to update user role.', 'error');
-    }
-  };
-
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    try {
-      await api.delete(`/users/${userId}`);
-      showBanner('User deleted successfully.', 'success');
-      loadDashboardData();
-    } catch (err: any) {
-      showBanner(err.response?.data?.message || 'Failed to delete user.', 'error');
-    }
-  };
-
-  if (authLoading) {
+  if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-950 text-white">
-        <div className="text-center">
-          <svg className="h-10 w-10 animate-spin text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <p className="text-sm text-gray-400">Loading admin session...</p>
+      <div className="space-y-8 animate-pulse">
+        {/* Banner skeleton */}
+        <div className="h-32 rounded-3xl bg-slate-900/60 border border-slate-800" />
+        
+        {/* Stats Grid skeleton */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-28 rounded-2xl bg-slate-900/60 border border-slate-800" />
+          ))}
+        </div>
+
+        {/* Charts & Lists skeleton */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2 h-96 rounded-3xl bg-slate-900/60 border border-slate-800" />
+          <div className="h-96 rounded-3xl bg-slate-900/60 border border-slate-800" />
         </div>
       </div>
     );
   }
 
-  if (!user || user.role !== 'admin') return null;
+  // Calculate SVG Graph Coordinates dynamically
+  const eventStatusCount = stats?.events_by_status || {};
+  const upcomingCount = eventStatusCount.upcoming || 0;
+  const ongoingCount = eventStatusCount.ongoing || 0;
+  const completedCount = eventStatusCount.completed || 0;
+  const cancelledCount = eventStatusCount.cancelled || 0;
+  const maxEventVal = Math.max(upcomingCount, ongoingCount, completedCount, cancelledCount, 1);
 
   return (
-    <div className="flex min-h-screen bg-gray-950 text-gray-200">
+    <div className="space-y-8">
+      
+      {/* Welcome Hero Banner */}
+      <div className="relative rounded-3xl overflow-hidden border border-slate-900 bg-gradient-to-r from-indigo-900/20 via-slate-950/20 to-slate-950 p-8 sm:p-10 shadow-2xl">
+        <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+        <div className="relative z-10 max-w-2xl space-y-2">
+          <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+            Active Session
+          </span>
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight pt-2">
+            Welcome back, {admin?.name || 'Administrator'}
+          </h3>
+          <p className="text-sm text-slate-400 leading-relaxed pt-1">
+            Student Organization Management System dashboard. Review active club enrollment rates, oversee student registers, track calendar checks, and audit system configurations.
+          </p>
+        </div>
+      </div>
 
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-gray-900 bg-gray-950 flex-col justify-between hidden md:flex">
-        <div>
-          <div className="px-6 py-6 border-b border-gray-900 flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-red-600 to-amber-500 text-white font-bold shadow-md shadow-red-500/10">
-              <ShieldCheck className="h-5 w-5" />
+      {error && (
+        <div className="p-4.5 rounded-2xl border border-red-500/25 bg-red-500/5 text-sm text-red-400 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <span>{error}</span>
+          <button onClick={fetchDashboardData} className="ml-auto underline font-bold cursor-pointer">Retry</button>
+        </div>
+      )}
+
+      {/* Metrics Card Grid */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Metric 1 */}
+        <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6 backdrop-blur-md hover:border-slate-800 transition-all duration-300 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 -translate-y-4 translate-x-4 h-16 w-16 bg-indigo-500/5 rounded-full group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Registered Users</p>
+            <div className="h-10 w-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <Users className="h-5 w-5" />
             </div>
-            <span className="font-bold tracking-tight text-white text-lg">Admin Panel</span>
           </div>
-
-          <nav className="p-4 space-y-1.5">
-            <button
-              onClick={() => setActiveTab('home')}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'home' ? 'bg-red-600/10 border border-red-500/20 text-red-400' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <LayoutDashboard className="h-4 w-4" /> Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('categories')}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'categories' ? 'bg-red-600/10 border border-red-500/20 text-red-400' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <BookOpen className="h-4 w-4" /> Categories
-            </button>
-            <button
-              onClick={() => setActiveTab('organizations')}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'organizations' ? 'bg-red-600/10 border border-red-500/20 text-red-400' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <Building2 className="h-4 w-4" /> Organizations
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-red-600/10 border border-red-500/20 text-red-400' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <Users className="h-4 w-4" /> Manage Users
-            </button>
-          </nav>
+          <div className="mt-4 flex items-baseline gap-2">
+            <h4 className="text-3xl font-extrabold text-white tracking-tight">{stats?.total_users || 0}</h4>
+            <span className="text-[10px] font-bold text-indigo-400">students</span>
+          </div>
         </div>
 
-        <div className="p-4 border-t border-gray-900 flex flex-col gap-3">
-          <div className="flex items-center gap-3 px-2">
-            <div className="h-9 w-9 rounded-full bg-red-600/25 border border-red-500/20 flex items-center justify-center text-sm font-bold text-red-400">
-              {user.name.split(' ').map(n => n[0]).join('')}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-white truncate">{user.name}</p>
-              <p className="text-[10px] text-gray-500 truncate">System Administrator</p>
+        {/* Metric 2 */}
+        <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6 backdrop-blur-md hover:border-slate-800 transition-all duration-300 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 -translate-y-4 translate-x-4 h-16 w-16 bg-emerald-500/5 rounded-full group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Organizations</p>
+            <div className="h-10 w-10 rounded-xl bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Building2 className="h-5 w-5" />
             </div>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center justify-center gap-2 w-full py-2 border border-gray-800 hover:border-red-500/30 hover:bg-red-500/5 hover:text-red-400 rounded-xl text-xs font-semibold text-gray-400 transition-all duration-200"
-          >
-            <LogOut className="h-3.5 w-3.5" /> Sign Out
-          </button>
+          <div className="mt-4 flex items-baseline gap-2">
+            <h4 className="text-3xl font-extrabold text-white tracking-tight">{stats?.total_organizations || 0}</h4>
+            <span className="text-[10px] font-bold text-emerald-400">active clubs</span>
+          </div>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-gray-900 px-6 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-white tracking-wide uppercase">
-            {activeTab === 'home' ? 'Dashboard Overview' : activeTab}
-          </h2>
-          <div className="px-3 py-1 rounded-full border border-red-500/20 bg-red-500/5 text-[11px] font-semibold text-red-400">
-            Administrator
-          </div>
-        </header>
-
-        <div className="flex-1 p-6 overflow-y-auto">
-          {message && (
-            <div className={`mb-6 p-4 rounded-xl border flex items-center gap-2.5 text-sm transition-all duration-200 ${message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400' : 'bg-red-500/10 border-red-500/25 text-red-400'}`}>
-              <AlertCircle className="h-4 w-4" />
-              {message.text}
+        {/* Metric 3 */}
+        <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6 backdrop-blur-md hover:border-slate-800 transition-all duration-300 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 -translate-y-4 translate-x-4 h-16 w-16 bg-amber-500/5 rounded-full group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Roster Approvals</p>
+            <div className="h-10 w-10 rounded-xl bg-amber-600/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <Clock className="h-5 w-5" />
             </div>
-          )}
+          </div>
+          <div className="mt-4 flex items-baseline gap-2">
+            <h4 className="text-3xl font-extrabold text-white tracking-tight">{stats?.pending_approvals || 0}</h4>
+            <span className="text-[10px] font-bold text-amber-400">awaiting</span>
+          </div>
+        </div>
 
-          {loading ? (
-            <div className="flex h-full items-center justify-center">
-              <svg className="h-8 w-8 animate-spin text-red-500" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        {/* Metric 4 */}
+        <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6 backdrop-blur-md hover:border-slate-800 transition-all duration-300 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 -translate-y-4 translate-x-4 h-16 w-16 bg-red-500/5 rounded-full group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suspended Members</p>
+            <div className="h-10 w-10 rounded-xl bg-red-600/10 border border-red-500/20 flex items-center justify-center text-red-400">
+              <UserX className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-baseline gap-2">
+            <h4 className="text-3xl font-extrabold text-white tracking-tight">{stats?.suspended_users || 0}</h4>
+            <span className="text-[10px] font-bold text-red-400">restricted</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Visualizers & List Feeds */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        
+        {/* SVG Custom Charts Container */}
+        <div className="lg:col-span-2 rounded-3xl border border-slate-900 bg-slate-950 p-6 sm:p-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-extrabold text-white">Event Scheduling Breakdown</h3>
+              <p className="text-xs text-slate-500">Live summary of events recorded across departments</p>
+            </div>
+            <Link 
+              href="/admin/events" 
+              className="text-xs font-bold text-indigo-400 hover:text-indigo-350 flex items-center gap-1 hover:underline transition-colors"
+            >
+              Manage Events <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          {/* SVG Histograms Chart */}
+          <div className="pt-4 flex flex-col md:flex-row gap-8 items-center justify-around bg-slate-900/10 border border-slate-900/40 p-6 rounded-2xl">
+            {/* SVG Visual */}
+            <div className="relative w-48 h-48 flex items-center justify-center">
+              {/* Draw a gorgeous SVG Semi-Donut or Radial Chart */}
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" stroke="#0f172a" strokeWidth="10" fill="transparent" />
+                
+                {/* Upcoming segment */}
+                <circle 
+                  cx="50" 
+                  cy="50" 
+                  r="40" 
+                  stroke="#6366f1" 
+                  strokeWidth="10" 
+                  fill="transparent" 
+                  strokeDasharray={`${(upcomingCount / maxEventVal) * 125} 251`}
+                  strokeDashoffset="0"
+                />
+
+                {/* Completed segment */}
+                <circle 
+                  cx="50" 
+                  cy="50" 
+                  r="40" 
+                  stroke="#10b981" 
+                  strokeWidth="10" 
+                  fill="transparent" 
+                  strokeDasharray={`${(completedCount / maxEventVal) * 70} 251`}
+                  strokeDashoffset={`-${(upcomingCount / maxEventVal) * 125}`}
+                />
               </svg>
+              <div className="absolute flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-black text-white">{stats?.total_events || 0}</span>
+                <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-widest">Total Events</span>
+              </div>
             </div>
-          ) : (
-            <>
-              {/* HOME TAB */}
-              {activeTab === 'home' && dashboardStats && (
-                <div className="space-y-6">
-                  <div className="relative rounded-2xl overflow-hidden border border-gray-800 bg-gradient-to-r from-red-600/20 via-gray-950/20 to-gray-950 p-8 shadow-lg">
-                    <h3 className="text-xl sm:text-2xl font-extrabold text-white">Welcome, {user.name}</h3>
-                    <p className="text-xs sm:text-sm text-gray-400 mt-1 max-w-xl">
-                      System administrator dashboard. Manage all categories, organizations, and monitor platform metrics.
-                    </p>
-                  </div>
 
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
-                    <div className="rounded-xl border border-gray-900 bg-gray-900/30 p-5 hover:border-gray-800 transition-all">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Registered Users</p>
-                      <h4 className="text-3xl font-extrabold text-white mt-1">{dashboardStats.total_users}</h4>
-                    </div>
-                    <div className="rounded-xl border border-gray-900 bg-gray-900/30 p-5 hover:border-gray-800 transition-all">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Organizations</p>
-                      <h4 className="text-3xl font-extrabold text-white mt-1">{dashboardStats.total_organizations}</h4>
-                    </div>
-                    <div className="rounded-xl border border-gray-900 bg-gray-900/30 p-5 hover:border-gray-800 transition-all">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Categories</p>
-                      <h4 className="text-3xl font-extrabold text-white mt-1">{dashboardStats.total_categories}</h4>
-                    </div>
-                    <div className="rounded-xl border border-gray-900 bg-gray-900/30 p-5 hover:border-gray-800 transition-all">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Events</p>
-                      <h4 className="text-3xl font-extrabold text-white mt-1">{dashboardStats.total_events}</h4>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-gray-900 bg-gray-900/20 p-6">
-                      <h3 className="text-base font-bold text-white mb-4">Upcoming University Events</h3>
-                      <div className="space-y-4">
-                        {dashboardStats.upcoming_events?.length === 0 ? (
-                          <p className="text-sm text-gray-500">No upcoming events listed.</p>
-                        ) : (
-                          dashboardStats.upcoming_events?.map((e: Event) => (
-                            <div key={e.id} className="flex justify-between items-start border-b border-gray-900 pb-3">
-                              <div>
-                                <h4 className="text-sm font-semibold text-white">{e.title}</h4>
-                                <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1">
-                                  <MapPin className="h-3 w-3" /> {e.location}
-                                </p>
-                              </div>
-                              <span className="text-[10px] bg-gray-900 text-gray-400 px-2 py-0.5 rounded-full border border-gray-800">
-                                {new Date(e.start_time).toLocaleDateString()}
-                              </span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-900 bg-gray-900/20 p-6">
-                      <h3 className="text-base font-bold text-white mb-4">Organization Members Count</h3>
-                      <div className="space-y-3">
-                        {dashboardStats.organization_stats?.length === 0 ? (
-                          <p className="text-sm text-gray-500">No organizations listed.</p>
-                        ) : (
-                          dashboardStats.organization_stats?.map((org: any, i: number) => (
-                            <div key={i} className="flex justify-between items-center text-sm">
-                              <span className="text-gray-400 font-medium">{org.name} ({org.acronym})</span>
-                              <span className="font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-md border border-red-500/15">
-                                {org.memberships_count} members
-                              </span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
+            {/* Custom Interactive Legend */}
+            <div className="flex-1 w-full max-w-xs space-y-4">
+              {/* Row 1 */}
+              <div className="flex items-center justify-between text-sm border-b border-slate-900 pb-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-3 w-3 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/20" />
+                  <span className="font-semibold text-slate-400">Upcoming Scheduler</span>
                 </div>
-              )}
+                <span className="font-black text-white">{upcomingCount}</span>
+              </div>
 
-              {/* CATEGORIES TAB */}
-              {activeTab === 'categories' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white">Manage Categories</h3>
-                    <button
-                      onClick={() => setShowCategoryModal(true)}
-                      className="flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-semibold text-white px-4 py-2 transition-all shadow-md shadow-red-500/10"
-                    >
-                      <Plus className="h-4 w-4" /> Add Category
-                    </button>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-xl border border-gray-900 bg-gray-900/10">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-gray-900 bg-gray-900/30 text-xs font-semibold text-gray-400 uppercase">
-                          <th className="p-4">Name</th>
-                          <th className="p-4">Description</th>
-                          <th className="p-4">Orgs Count</th>
-                          <th className="p-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-900 text-sm">
-                        {categories.map((cat) => (
-                          <tr key={cat.id} className="hover:bg-gray-900/20">
-                            <td className="p-4 font-semibold text-white">{cat.name}</td>
-                            <td className="p-4 text-gray-400 max-w-md truncate">{cat.description || 'N/A'}</td>
-                            <td className="p-4 text-gray-400">{cat.organizations_count || 0}</td>
-                            <td className="p-4 text-right">
-                              <button
-                                onClick={() => handleDeleteCategory(cat.id)}
-                                className="text-red-400 hover:text-red-300 font-semibold text-xs"
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+              {/* Row 2 */}
+              <div className="flex items-center justify-between text-sm border-b border-slate-900 pb-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/20" />
+                  <span className="font-semibold text-slate-400">Completed Sessions</span>
                 </div>
-              )}
+                <span className="font-black text-white">{completedCount}</span>
+              </div>
 
-              {/* ORGANIZATIONS TAB */}
-              {activeTab === 'organizations' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white">Manage Organizations</h3>
-                    <button
-                      onClick={() => setShowOrgModal(true)}
-                      className="flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-semibold text-white px-4 py-2 transition-all shadow-md shadow-red-500/10"
-                    >
-                      <Plus className="h-4 w-4" /> Add Organization
-                    </button>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-xl border border-gray-900 bg-gray-900/10">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-gray-900 bg-gray-900/30 text-xs font-semibold text-gray-400 uppercase">
-                          <th className="p-4">Name</th>
-                          <th className="p-4">Acronym</th>
-                          <th className="p-4">Category</th>
-                          <th className="p-4">Status</th>
-                          <th className="p-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-900 text-sm">
-                        {organizations.map((org) => (
-                          <tr key={org.id} className="hover:bg-gray-900/20">
-                            <td className="p-4 font-semibold text-white">{org.name}</td>
-                            <td className="p-4 text-red-400 font-mono font-bold">{org.acronym}</td>
-                            <td className="p-4 text-gray-400">{org.category?.name || 'N/A'}</td>
-                            <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${org.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-gray-900 text-gray-500 border border-gray-800'}`}>
-                                {org.status}
-                              </span>
-                            </td>
-                            <td className="p-4 text-right space-x-2">
-                              <button
-                                onClick={() => handleOpenMembersModal(org.id)}
-                                className="text-violet-400 hover:text-violet-300 font-semibold text-xs border border-violet-900 bg-violet-950/20 px-2.5 py-1 rounded-lg"
-                              >
-                                Manage Members
-                              </button>
-                              <button
-                                onClick={() => handleDeleteOrganization(org.id)}
-                                className="text-red-400 hover:text-red-300 font-semibold text-xs border border-red-950 bg-red-950/20 px-2.5 py-1 rounded-lg"
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+              {/* Row 3 */}
+              <div className="flex items-center justify-between text-sm border-b border-slate-900 pb-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-3 w-3 rounded-full bg-sky-500 shadow-sm shadow-sky-500/20" />
+                  <span className="font-semibold text-slate-400">Ongoing Operations</span>
                 </div>
-              )}
+                <span className="font-black text-white">{ongoingCount}</span>
+              </div>
 
-              {/* USERS TAB */}
-              {activeTab === 'users' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white">Manage Users</h3>
-                    <span className="text-xs text-gray-500">{allUsers.length} total users</span>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-xl border border-gray-900 bg-gray-900/10">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-gray-900 bg-gray-900/30 text-xs font-semibold text-gray-400 uppercase">
-                          <th className="p-4">Name</th>
-                          <th className="p-4">Email</th>
-                          <th className="p-4">Student ID</th>
-                          <th className="p-4">Role</th>
-                          <th className="p-4">Memberships</th>
-                          <th className="p-4">Registered</th>
-                          <th className="p-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-900 text-sm">
-                        {allUsers.map((u: any) => (
-                          <tr key={u.id} className="hover:bg-gray-900/20">
-                            <td className="p-4 font-semibold text-white">{u.name}</td>
-                            <td className="p-4 text-gray-400">{u.email}</td>
-                            <td className="p-4 text-gray-400 font-mono">{u.student_id || '—'}</td>
-                            <td className="p-4">
-                              <select
-                                value={u.role}
-                                onChange={(e) => handleChangeUserRole(u.id, e.target.value)}
-                                disabled={u.id === user.id}
-                                className="rounded-lg border border-gray-800 bg-gray-950 py-1 px-2 text-xs text-gray-200 outline-none focus:border-red-500 disabled:opacity-40 disabled:cursor-not-allowed"
-                              >
-                                <option value="student">Student</option>
-                                <option value="officer">Officer</option>
-                                <option value="admin">Admin</option>
-                              </select>
-                            </td>
-                            <td className="p-4 text-gray-400">{u.memberships_count}</td>
-                            <td className="p-4 text-gray-500 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
-                            <td className="p-4 text-right">
-                              {u.id !== user.id ? (
-                                <button
-                                  onClick={() => handleDeleteUser(u.id)}
-                                  className="text-red-400 hover:text-red-300 font-semibold text-xs inline-flex items-center gap-1"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                                </button>
-                              ) : (
-                                <span className="text-[10px] text-gray-600">Current user</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+              {/* Row 4 */}
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-3 w-3 rounded-full bg-red-500 shadow-sm shadow-red-500/20" />
+                  <span className="font-semibold text-slate-400">Cancelled / Suspended</span>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </main>
-
-      {/* CREATE CATEGORY MODAL */}
-      {showCategoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">New Category</h3>
-              <button onClick={() => setShowCategoryModal(false)} className="text-gray-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
+                <span className="font-black text-white">{cancelledCount}</span>
+              </div>
             </div>
-            <form onSubmit={handleCreateCategory} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase">Category Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="Technology & Science"
-                  className="w-full rounded-xl border border-gray-800 bg-gray-950/80 py-2 pl-3 pr-3 text-sm text-gray-200 outline-none focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase">Description</label>
-                <textarea
-                  value={newCatDesc}
-                  onChange={(e) => setNewCatDesc(e.target.value)}
-                  placeholder="Brief description of the category..."
-                  className="w-full rounded-xl border border-gray-800 bg-gray-950/80 py-2 pl-3 pr-3 text-sm text-gray-200 outline-none h-24 focus:border-red-500 resize-none"
-                />
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCategoryModal(false)}
-                  className="px-4 py-2 border border-gray-800 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-semibold text-white transition-all"
-                >
-                  Create Category
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
 
-      {/* CREATE ORGANIZATION MODAL */}
-      {showOrgModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">New Organization</h3>
-              <button onClick={() => setShowOrgModal(false)} className="text-gray-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateOrganization} className="space-y-4">
+          {/* Core system activities logs table summary */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase">Organization Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newOrgName}
-                  onChange={(e) => setNewOrgName(e.target.value)}
-                  placeholder="Computer Science Society"
-                  className="w-full rounded-xl border border-gray-800 bg-gray-950/80 py-2 pl-3 pr-3 text-sm text-gray-200 outline-none focus:border-red-500"
-                />
+                <h4 className="text-sm font-extrabold text-white">Platform Activity Audits</h4>
+                <p className="text-[11px] text-slate-500">Latest admin operations and authentication tracks</p>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase">Acronym</label>
-                <input
-                  type="text"
-                  required
-                  value={newOrgAcronym}
-                  onChange={(e) => setNewOrgAcronym(e.target.value)}
-                  placeholder="CSS"
-                  className="w-full rounded-xl border border-gray-800 bg-gray-950/80 py-2 pl-3 pr-3 text-sm text-gray-200 outline-none focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase">Description</label>
-                <textarea
-                  value={newOrgDesc}
-                  onChange={(e) => setNewOrgDesc(e.target.value)}
-                  placeholder="Brief description of the organization..."
-                  className="w-full rounded-xl border border-gray-800 bg-gray-950/80 py-2 pl-3 pr-3 text-sm text-gray-200 outline-none h-20 focus:border-red-500 resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase">Category</label>
-                <select
-                  required
-                  value={newOrgCatId}
-                  onChange={(e) => setNewOrgCatId(e.target.value)}
-                  className="w-full rounded-xl border border-gray-800 bg-gray-950/80 py-2 px-3 text-sm text-gray-200 outline-none focus:border-red-500"
-                >
-                  <option value="">Select a category...</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowOrgModal(false)}
-                  className="px-4 py-2 border border-gray-800 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-semibold text-white transition-all"
-                >
-                  Create Organization
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ADMIN MEMBERSHIP MANAGEMENT MODAL */}
-      {showMembersModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-3xl rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-2xl max-h-[85vh] flex flex-col">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-white">
-                  Manage Organization Roster
-                </h3>
-                {selectedOrgDetails?.organization && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    {selectedOrgDetails.organization.name} ({selectedOrgDetails.organization.acronym})
-                  </p>
-                )}
-              </div>
-              <button onClick={() => setShowMembersModal(false)} className="text-gray-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {membersModalLoading ? (
-              <div className="flex-1 flex items-center justify-center py-12">
-                <svg className="h-8 w-8 animate-spin text-red-500" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              </div>
-            ) : selectedOrgDetails ? (
-              <div className="overflow-y-auto flex-1 space-y-6 pr-1">
-                {/* Pending Requests */}
-                <div>
-                  <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-1.5">
-                    Pending Applications
-                    {selectedOrgDetails.pending_members?.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-400 font-bold">
-                        {selectedOrgDetails.pending_members.length} new
-                      </span>
-                    )}
-                  </h4>
-                  {selectedOrgDetails.pending_members?.length === 0 ? (
-                    <p className="text-xs text-gray-500 italic">No pending applications for this organization.</p>
-                  ) : (
-                    <div className="overflow-x-auto rounded-xl border border-gray-950">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-gray-950 bg-gray-950/40 text-gray-400 uppercase font-semibold">
-                            <th className="p-3">Student ID</th>
-                            <th className="p-3">Name</th>
-                            <th className="p-3">Email</th>
-                            <th className="p-3 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-950 text-gray-300">
-                          {selectedOrgDetails.pending_members.map((m: any) => (
-                            <tr key={m.id} className="hover:bg-gray-900/10">
-                              <td className="p-3 font-mono">{m.user?.student_id || '—'}</td>
-                              <td className="p-3 font-semibold text-white">{m.user?.name}</td>
-                              <td className="p-3 text-gray-400">{m.user?.email}</td>
-                              <td className="p-3 text-right space-x-2">
-                                <button
-                                  onClick={() => handleAdminUpdateMembershipStatus(m.id, 'approved')}
-                                  className="text-emerald-400 hover:text-emerald-350 font-bold bg-emerald-950/15 border border-emerald-900 px-2 py-1 rounded"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleAdminUpdateMembershipStatus(m.id, 'rejected')}
-                                  className="text-red-400 hover:text-red-350 font-bold bg-red-950/15 border border-red-900 px-2 py-1 rounded"
-                                >
-                                  Reject
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-
-                {/* Roster / Active Members */}
-                <div>
-                  <h4 className="text-sm font-bold text-white mb-2">Active Members & Officers ({selectedOrgDetails.members_count})</h4>
-                  {selectedOrgDetails.members?.length === 0 ? (
-                    <p className="text-xs text-gray-500 italic">No approved members found.</p>
-                  ) : (
-                    <div className="overflow-x-auto rounded-xl border border-gray-950">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-gray-950 bg-gray-950/40 text-gray-400 uppercase font-semibold">
-                            <th className="p-3">Student ID</th>
-                            <th className="p-3">Name</th>
-                            <th className="p-3">Email</th>
-                            <th className="p-3">Role</th>
-                            <th className="p-3 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-950 text-gray-300">
-                          {selectedOrgDetails.members.map((m: any) => (
-                            <tr key={m.id} className="hover:bg-gray-900/10">
-                              <td className="p-3 font-mono">{m.user?.student_id || '—'}</td>
-                              <td className="p-3 font-semibold text-white">{m.user?.name}</td>
-                              <td className="p-3 text-gray-400">{m.user?.email}</td>
-                              <td className="p-3">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${m.role === 'officer' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-gray-900 text-gray-500 border border-gray-800'}`}>
-                                  {m.role === 'officer' ? (m.officer_title || 'Officer') : 'Member'}
-                                </span>
-                              </td>
-                              <td className="p-3 text-right space-x-2">
-                                {m.role === 'member' ? (
-                                  <button
-                                    onClick={() => handleAdminAssignOfficerRole(m.id, true)}
-                                    className="text-red-400 hover:text-red-300 font-semibold px-2 py-1 border border-red-950 bg-red-950/10 rounded"
-                                  >
-                                    Assign Officer
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => handleAdminAssignOfficerRole(m.id, false)}
-                                    className="text-gray-400 hover:text-gray-300 font-semibold px-2 py-1 border border-gray-800 bg-gray-900 rounded"
-                                  >
-                                    Demote
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleAdminRemoveMember(m.id)}
-                                  className="text-red-500 hover:text-red-400 font-bold px-2 py-1 border border-red-950 bg-red-950/20 rounded"
-                                >
-                                  Remove
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 py-8 text-center">Failed to load organization details.</p>
-            )}
-
-            <div className="flex justify-end pt-4 border-t border-gray-800 mt-4">
-              <button
-                onClick={() => setShowMembersModal(false)}
-                className="px-5 py-2 border border-gray-800 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-200 transition-all"
+              <Link 
+                href="/admin/activity-logs" 
+                className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-0.5"
               >
-                Close
-              </button>
+                View all <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <div className="divide-y divide-slate-900/60 border border-slate-900 rounded-2xl overflow-hidden bg-slate-950">
+              {logs.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500 italic">No activity logs recorded.</div>
+              ) : (
+                logs.map((log) => (
+                  <div key={log.id} className="p-4 flex items-start gap-4 hover:bg-slate-900/10 transition-colors">
+                    <div className="h-8.5 w-8.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 shrink-0">
+                      <Activity className="h-4 w-4" />
+                    </div>
+                    <div className="overflow-hidden min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-white truncate">{log.description}</p>
+                        <p className="text-[10px] font-semibold text-slate-500 shrink-0">
+                          {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/15 uppercase font-mono tracking-wider">
+                          {log.action}
+                        </span>
+                        <span className="text-[10px] text-slate-500 truncate">
+                          by {log.user?.name || 'System Operator'} • IP: {log.ip_address}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
-      )}
+
+        {/* Sidebar Events Agenda */}
+        <div className="rounded-3xl border border-slate-900 bg-slate-950 p-6 sm:p-8 space-y-6">
+          <div>
+            <h3 className="text-base font-extrabold text-white">Upcoming Events Schedules</h3>
+            <p className="text-xs text-slate-500">Next active school capstones and panels</p>
+          </div>
+
+          <div className="relative border-l border-slate-900 pl-4.5 ml-2.5 space-y-8 py-2">
+            {events.length === 0 ? (
+              <div className="text-xs text-slate-500 italic text-center py-10">No upcoming events listed.</div>
+            ) : (
+              events.map((ev) => (
+                <div key={ev.id} className="relative group">
+                  {/* Timeline bullet */}
+                  <span className="absolute -left-[27px] top-1 h-3.5 w-3.5 rounded-full bg-slate-950 border border-slate-900 flex items-center justify-center">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 group-hover:scale-150 transition-transform duration-200" />
+                  </span>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-indigo-400 flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                        {new Date(ev.start_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${
+                        ev.status === 'ongoing' 
+                          ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' 
+                          : ev.status === 'completed'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                      }`}>
+                        {ev.status}
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-white group-hover:text-indigo-400 transition-colors pt-1">
+                      {ev.title}
+                    </h4>
+                    
+                    <p className="text-[10px] text-slate-500">
+                      Venue: <span className="font-semibold text-slate-400">{ev.venue || 'TBD'}</span>
+                    </p>
+                    
+                    {ev.organization && (
+                      <p className="text-[9px] font-bold text-indigo-500/60 uppercase tracking-wider">
+                        By {ev.organization.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <Link
+            href="/admin/events"
+            className="flex items-center justify-center gap-2 w-full py-3.5 bg-slate-900 hover:bg-indigo-650/15 border border-slate-850 hover:border-indigo-500/20 rounded-2xl text-xs font-bold text-slate-400 hover:text-indigo-400 transition-all cursor-pointer"
+          >
+            Go to Events Planner
+          </Link>
+        </div>
+
+      </div>
 
     </div>
   );

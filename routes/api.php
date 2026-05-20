@@ -1,73 +1,105 @@
 <?php
 
-use App\Http\Controllers\Api\AnnouncementController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\EventController;
-use App\Http\Controllers\Api\MembershipController;
-use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\OrganizationController as AdminOrganizationController;
+use App\Http\Controllers\Admin\EventController as AdminEventController;
+use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
+
+use App\Http\Controllers\Member\AuthController as MemberAuthController;
+use App\Http\Controllers\Member\ProfileController as MemberProfileController;
+use App\Http\Controllers\Member\OrganizationController as MemberOrganizationController;
+use App\Http\Controllers\Member\EventController as MemberEventController;
+use App\Http\Controllers\Member\AnnouncementController as MemberAnnouncementController;
+use App\Http\Controllers\Member\NotificationController as MemberNotificationController;
+
 use Illuminate\Support\Facades\Route;
 
-// Public Auth routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+// ==================== ADMIN PORTAL ====================
 
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
-    // Current user endpoints
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
-    Route::get('/dashboard-stats', [OrganizationController::class, 'getDashboardStats']);
+// Admin Public Auth (no middleware)
+Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
-    // Categories
-    Route::get('/categories', [CategoryController::class, 'index']);
-    Route::get('/categories/{category}', [CategoryController::class, 'show']);
-    Route::middleware('role:admin')->group(function () {
-        Route::post('/categories', [CategoryController::class, 'store']);
-        Route::put('/categories/{category}', [CategoryController::class, 'update']);
-        Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+// Admin Protected Routes
+Route::middleware(['auth:sanctum', 'admin.guard'])->group(function () {
+    Route::post('/admin/logout', [AdminAuthController::class, 'logout']);
+    Route::get('/admin/me', [AdminAuthController::class, 'me']);
 
-        // Admin user management
-        Route::get('/users', [AuthController::class, 'allUsers']);
-        Route::put('/users/{id}/role', [AuthController::class, 'updateUserRole']);
-        Route::delete('/users/{id}', [AuthController::class, 'deleteUser']);
-    });
+    // Admin: Users
+    Route::get('/admin/users', [AdminUserController::class, 'index']);
+    Route::get('/admin/users/{id}', [AdminUserController::class, 'show']);
+    Route::patch('/admin/users/{id}/suspend', [AdminUserController::class, 'suspend']);
+    Route::patch('/admin/users/{id}/restore', [AdminUserController::class, 'restore']);
+    Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy']);
 
-    // Organizations
-    Route::get('/organizations', [OrganizationController::class, 'index']);
-    Route::get('/organizations/{organization}', [OrganizationController::class, 'show']);
-    Route::middleware('role:admin')->group(function () {
-        Route::post('/organizations', [OrganizationController::class, 'store']);
-        Route::delete('/organizations/{organization}', [OrganizationController::class, 'destroy']);
-    });
-    // Update is authorized inside the controller (both Admin & Officer of the organization)
-    Route::put('/organizations/{organization}', [OrganizationController::class, 'update']);
+    // Admin: Organizations
+    Route::get('/admin/departments', [AdminOrganizationController::class, 'departments']);
+    Route::get('/admin/organizations', [AdminOrganizationController::class, 'index']);
+    Route::post('/admin/organizations', [AdminOrganizationController::class, 'store']);
+    Route::get('/admin/organizations/{id}', [AdminOrganizationController::class, 'show']);
+    Route::put('/admin/organizations/{id}', [AdminOrganizationController::class, 'update']);
+    Route::delete('/admin/organizations/{id}', [AdminOrganizationController::class, 'destroy']);
+    Route::post('/admin/organizations/{id}/approve-member/{userId}', [AdminOrganizationController::class, 'approveMember']);
+    Route::delete('/admin/organizations/{id}/remove-member/{userId}', [AdminOrganizationController::class, 'removeMember']);
 
-    // Memberships
-    Route::post('/memberships/join', [MembershipController::class, 'joinRequest']);
-    Route::get('/memberships/my', [MembershipController::class, 'myMemberships']);
-    // Status, role assignment, and delete are authorized in the controller
-    Route::put('/memberships/{id}/status', [MembershipController::class, 'updateStatus']);
-    Route::put('/memberships/{id}/role', [MembershipController::class, 'assignRole']);
-    Route::delete('/memberships/{id}', [MembershipController::class, 'destroy']);
-    Route::get('/organizations/{id}/members/report', [MembershipController::class, 'generateReport']);
+    // Admin: Events
+    Route::get('/admin/events', [AdminEventController::class, 'index']);
+    Route::post('/admin/events', [AdminEventController::class, 'store']);
+    Route::get('/admin/events/{id}', [AdminEventController::class, 'show']);
+    Route::put('/admin/events/{id}', [AdminEventController::class, 'update']);
+    Route::delete('/admin/events/{id}', [AdminEventController::class, 'destroy']);
+    Route::get('/admin/events/{id}/attendance', [AdminEventController::class, 'attendance']);
+    Route::post('/admin/events/{id}/attendance', [AdminEventController::class, 'manualCheckin']);
+    Route::delete('/admin/events/{id}/attendance/{attendanceId}', [AdminEventController::class, 'removeAttendance']);
 
-    // Events
-    Route::get('/events', [EventController::class, 'index']);
-    Route::get('/events/{event}', [EventController::class, 'show']);
-    Route::post('/events/{id}/rsvp', [EventController::class, 'rsvp']);
-    // Store, update, delete, attendance, and reports authorized in the controller
-    Route::post('/events', [EventController::class, 'store']);
-    Route::put('/events/{event}', [EventController::class, 'update']);
-    Route::delete('/events/{event}', [EventController::class, 'destroy']);
-    Route::post('/events/{id}/attendance', [EventController::class, 'updateAttendance']);
-    Route::get('/events/{id}/report', [EventController::class, 'generateReport']);
+    // Admin: Announcements
+    Route::get('/admin/announcements', [AdminAnnouncementController::class, 'index']);
+    Route::post('/admin/announcements', [AdminAnnouncementController::class, 'store']);
+    Route::put('/admin/announcements/{id}', [AdminAnnouncementController::class, 'update']);
+    Route::delete('/admin/announcements/{id}', [AdminAnnouncementController::class, 'destroy']);
 
-    // Announcements
-    Route::get('/announcements', [AnnouncementController::class, 'index']);
-    Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show']);
-    // Store, update, delete authorized in the controller
-    Route::post('/announcements', [AnnouncementController::class, 'store']);
-    Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
-    Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+    // Admin: Reports
+    Route::get('/admin/reports/overview', [AdminReportController::class, 'overview']);
+    Route::get('/admin/reports/attendance', [AdminReportController::class, 'attendance']);
+    Route::get('/admin/activity-logs', [AdminReportController::class, 'activityLogs']);
+});
+
+// ==================== MEMBER PORTAL ====================
+
+// Member Public Auth (no middleware)
+Route::post('/auth/register', [MemberAuthController::class, 'register']);
+Route::post('/auth/login', [MemberAuthController::class, 'login']);
+Route::post('/auth/forgot-password', [MemberAuthController::class, 'forgotPassword']);
+Route::post('/auth/reset-password', [MemberAuthController::class, 'resetPassword']);
+
+// Member Protected Routes
+Route::middleware(['auth:sanctum', 'member.guard'])->group(function () {
+    Route::post('/member/logout', [MemberAuthController::class, 'logout']);
+    Route::get('/member/me', [MemberAuthController::class, 'me']);
+
+    // Member: Profile
+    Route::get('/member/profile', [MemberProfileController::class, 'show']);
+    Route::put('/member/profile', [MemberProfileController::class, 'update']);
+    Route::post('/member/profile/avatar', [MemberProfileController::class, 'uploadAvatar']);
+
+    // Member: Organizations
+    Route::get('/member/organizations', [MemberOrganizationController::class, 'index']);
+    Route::get('/member/organizations/mine', [MemberOrganizationController::class, 'mine']);
+    Route::get('/member/organizations/{id}', [MemberOrganizationController::class, 'show']);
+    Route::post('/member/organizations/{id}/join', [MemberOrganizationController::class, 'join']);
+
+    // Member: Events
+    Route::get('/member/events', [MemberEventController::class, 'index']);
+    Route::get('/member/events/{id}', [MemberEventController::class, 'show']);
+    Route::post('/member/events/{id}/checkin', [MemberEventController::class, 'checkin']);
+
+    // Member: Announcements
+    Route::get('/member/announcements', [MemberAnnouncementController::class, 'index']);
+    Route::get('/member/announcements/{id}', [MemberAnnouncementController::class, 'show']);
+
+    // Member: Notifications
+    Route::get('/member/notifications', [MemberNotificationController::class, 'index']);
+    Route::patch('/member/notifications/{id}/read', [MemberNotificationController::class, 'markAsRead']);
+    Route::patch('/member/notifications/read-all', [MemberNotificationController::class, 'markAllAsRead']);
 });

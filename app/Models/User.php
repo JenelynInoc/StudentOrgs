@@ -2,74 +2,82 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasUuids, HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',
         'student_id',
+        'avatar',
+        'is_suspended',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_suspended' => 'boolean',
         ];
     }
 
-    public function memberships()
+    public function organizationMembers(): HasMany
     {
-        return $this->hasMany(Membership::class);
+        return $this->hasMany(OrganizationMember::class);
     }
 
-    public function organizations()
+    public function organizations(): BelongsToMany
     {
-        return $this->belongsToMany(Organization::class, 'memberships')
-                    ->withPivot('role', 'officer_title', 'status')
-                    ->withTimestamps();
+        return $this->belongsToMany(Organization::class, 'organization_members')
+            ->withPivot('status', 'joined_at')
+            ->withTimestamps();
     }
 
-    public function eventParticipations()
+    public function officers(): HasMany
     {
-        return $this->hasMany(EventParticipation::class);
+        return $this->hasMany(Officer::class);
     }
 
-    public function announcements()
+    public function attendance(): HasMany
     {
-        return $this->hasMany(Announcement::class, 'posted_by');
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function createdEvents(): HasMany
+    {
+        return $this->hasMany(Event::class, 'created_by');
+    }
+
+    public function createdAnnouncements(): HasMany
+    {
+        return $this->hasMany(Announcement::class, 'created_by');
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 }
+

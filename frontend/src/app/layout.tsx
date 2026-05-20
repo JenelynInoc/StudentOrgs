@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "A centralized platform for school organizations, events, memberships, and activities.",
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,6 +33,18 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
+          <Toaster 
+            position="top-right" 
+            toastOptions={{
+              style: {
+                background: '#0b0f19',
+                color: '#f8fafc',
+                border: '1px solid #1e293b',
+                fontSize: '13px',
+                fontWeight: '600',
+              }
+            }}
+          />
         </AuthProvider>
       </body>
     </html>

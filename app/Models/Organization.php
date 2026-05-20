@@ -2,32 +2,50 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Organization extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
-        'acronym',
         'description',
-        'logo_path',
-        'category_id',
+        'department_id',
+        'logo',
         'status',
     ];
 
-    public function category(): BelongsTo
+    protected $casts = [
+        'status' => 'string',
+    ];
+
+    public function department(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Department::class);
     }
 
-    public function memberships(): HasMany
+    public function members(): BelongsToMany
     {
-        return $this->hasMany(Membership::class);
+        return $this->belongsToMany(User::class, 'organization_members')
+            ->withPivot('status', 'joined_at')
+            ->withTimestamps();
+    }
+
+    public function organizationMembers(): HasMany
+    {
+        return $this->hasMany(OrganizationMember::class);
+    }
+
+    public function officers(): HasMany
+    {
+        return $this->hasMany(Officer::class);
     }
 
     public function events(): HasMany
@@ -40,3 +58,4 @@ class Organization extends Model
         return $this->hasMany(Announcement::class);
     }
 }
+
