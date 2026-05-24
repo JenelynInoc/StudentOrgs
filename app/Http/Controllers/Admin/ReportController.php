@@ -128,4 +128,13 @@ class ReportController extends Controller
             ],
         ]);
     }
+
+    public function clearActivityLogs(): JsonResponse
+    {
+        ActivityLog::truncate();
+
+        return response()->json([
+            'message' => 'All activity logs have been cleared successfully',
+        ]);
+    }
 }

@@ -26,7 +26,8 @@ interface OrganizationItem {
   status: 'active' | 'inactive';
   created_at: string;
   department?: { name: string; code: string };
-  members_count?: number;
+  approved_members_count?: number;
+  pending_members_count?: number;
 }
 
 interface Department {
@@ -331,8 +332,15 @@ export default function AdminOrganizationsPage() {
                         <span className="text-slate-500 text-[10px]">None</span>
                       )}
                     </td>
-                    <td className="p-4 font-mono font-bold text-indigo-400">
-                      {org.members_count || 0} members
+                    <td className="p-4">
+                      <div className="font-mono font-bold text-indigo-400">
+                        {org.approved_members_count || 0} members
+                      </div>
+                      {(org.pending_members_count || 0) > 0 && (
+                        <div className="font-mono font-bold text-amber-500 text-[10px] mt-0.5 animate-pulse">
+                          {org.pending_members_count} awaiting approval
+                        </div>
+                      )}
                     </td>
                     <td className="p-4">
                       <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-extrabold uppercase border ${

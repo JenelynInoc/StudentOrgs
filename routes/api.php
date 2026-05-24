@@ -63,6 +63,7 @@ Route::middleware(['auth:sanctum', 'admin.guard'])->group(function () {
     Route::get('/admin/reports/overview', [AdminReportController::class, 'overview']);
     Route::get('/admin/reports/attendance', [AdminReportController::class, 'attendance']);
     Route::get('/admin/activity-logs', [AdminReportController::class, 'activityLogs']);
+    Route::delete('/admin/activity-logs/clear', [AdminReportController::class, 'clearActivityLogs']);
 });
 
 // ==================== MEMBER PORTAL ====================

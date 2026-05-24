@@ -57,6 +57,14 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $user->update(['is_suspended' => true]);
 
+        \App\Models\ActivityLog::create([
+            'action' => 'suspend',
+            'model_type' => get_class($user),
+            'model_id' => $user->id,
+            'user_id' => null,
+            'properties' => ['target_user_id' => $user->id],
+        ]);
+
         return response()->json([
             'message' => 'User suspended successfully',
             'data' => $user,
@@ -67,6 +75,14 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $user->update(['is_suspended' => false]);
+
+        \App\Models\ActivityLog::create([
+            'action' => 'restore',
+            'model_type' => get_class($user),
+            'model_id' => $user->id,
+            'user_id' => null,
+            'properties' => ['target_user_id' => $user->id],
+        ]);
 
         return response()->json([
             'message' => 'User restored successfully',

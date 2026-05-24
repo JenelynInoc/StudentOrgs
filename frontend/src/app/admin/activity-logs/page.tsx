@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '@/services/api';
 import { 
-  History, 
+  History,
+  Trash2,
   Search, 
   Clock, 
   User, 
@@ -92,6 +94,21 @@ export default function AdminActivityLogsPage() {
     setExpandedLogId(prev => (prev === id ? null : id));
   };
 
+  const handleClearAll = async () => {
+    if (!confirm('Are you absolute sure you want to PERMANENTLY clear all activity logs? This action cannot be undone.')) return;
+    
+    try {
+      setLoading(true);
+      await api.delete('/admin/activity-logs/clear');
+      toast.success('All activity logs have been cleared.');
+      fetchLogs();
+    } catch (err: any) {
+      console.error('Failed to clear logs:', err);
+      toast.error(err.response?.data?.message || 'Failed to clear activity logs.');
+      setLoading(false);
+    }
+  };
+
   // Classify actions for color badges
   const getActionBadgeColor = (action: string) => {
     const act = action.toLowerCase();
@@ -116,6 +133,12 @@ export default function AdminActivityLogsPage() {
           <h2 className="text-xl font-extrabold text-white tracking-tight">System Audit & Activity Logs</h2>
           <p className="text-xs text-slate-500">Trace chronological administrative operations, membership approvals, database modifications, and check-in logs</p>
         </div>
+        <button
+          onClick={handleClearAll}
+          className="inline-flex items-center gap-2 rounded-xl bg-red-600/10 hover:bg-red-600 text-xs font-bold text-red-400 hover:text-white px-5 py-3 border border-red-500/20 hover:border-red-500 transition-all cursor-pointer sm:self-start shrink-0"
+        >
+          <Trash2 className="h-4 w-4" /> Clear All Logs
+        </button>
       </div>
 
       {/* Filters */}

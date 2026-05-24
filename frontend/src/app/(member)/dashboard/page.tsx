@@ -130,9 +130,9 @@ export default function MemberDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="space-y-6">
         {/* Core Schedule Feed */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           
           {/* Upcoming Schedule Calendar */}
           <div className="rounded-2xl border border-slate-800/60 bg-slate-900/20 backdrop-blur-md p-6 shadow-xl">
@@ -193,71 +193,6 @@ export default function MemberDashboard() {
                       <span className="h-1 w-1 rounded-full bg-slate-850" />
                       <span>{new Date(a.created_at).toLocaleDateString()}</span>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-        </div>
-
-        {/* Side Actions Column */}
-        <div className="space-y-6">
-          
-          {/* Quick Check-in Widget */}
-          <div className="rounded-2xl border border-slate-800/60 bg-slate-900/20 backdrop-blur-md p-6 shadow-xl space-y-4">
-            <div className="flex items-center gap-2 text-white font-bold text-sm">
-              <UserCheck className="h-4.5 w-4.5 text-cyan-400" />
-              <span>Quick Event Check-in</span>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Open any upcoming event and click "Confirm My Attendance" to check in instantly.
-            </p>
-            <div className="space-y-2">
-              {upcomingEvents.length === 0 ? (
-                <p className="text-[10px] text-slate-500 text-center py-3">No upcoming events available.</p>
-              ) : (
-                upcomingEvents.map((e) => (
-                  <Link
-                    key={e.id}
-                    href={`/events/${e.id}`}
-                    className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-800/40 bg-slate-950/40 hover:bg-slate-900/60 hover:border-slate-700 transition-all group"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate group-hover:text-cyan-400 transition-colors">{e.title}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{new Date(e.start_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}</p>
-                    </div>
-                    <span className="text-[9px] font-extrabold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-lg uppercase shrink-0">Check In</span>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Quick Clubs Widget */}
-          <div className="rounded-2xl border border-slate-800/60 bg-slate-900/20 backdrop-blur-md p-6 shadow-xl">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4">My Roster Networks</h3>
-            <div className="space-y-3">
-              {myMemberships.length === 0 ? (
-                <div className="text-center py-6 text-xs text-slate-500 font-medium">
-                  Not registered in any clubs.
-                </div>
-              ) : (
-                myMemberships.map((m) => (
-                  <div key={m.id} className="flex justify-between items-center text-xs">
-                    <div>
-                      <span className="text-white font-bold block">{m.organization?.acronym || m.organization?.name?.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase() || 'Club'}</span>
-                      <span className="text-slate-500 text-[10px]">{m.organization?.name}</span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
-                      m.status === 'approved' 
-                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400' 
-                        : m.status === 'pending'
-                        ? 'border-amber-500/20 bg-amber-500/10 text-amber-400'
-                        : 'border-red-500/20 bg-red-500/10 text-red-400'
-                    }`}>
-                      {m.status}
-                    </span>
                   </div>
                 ))
               )}

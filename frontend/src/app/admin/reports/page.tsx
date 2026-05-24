@@ -317,7 +317,7 @@ export default function AdminReportsPage() {
       )}
 
       {/* Grid: Stat cards & Circular Gauge */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print-grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print-grid">
         
         {/* Total Records */}
         <div className="rounded-2xl border border-slate-900 bg-slate-950 p-5 space-y-2 flex flex-col justify-between print-card">
@@ -334,22 +334,6 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        {/* QR Scanner Method */}
-        <div className="rounded-2xl border border-slate-900 bg-slate-950 p-5 space-y-2 flex flex-col justify-between print-card">
-          <div className="flex items-center justify-between no-print">
-            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">QR Code Arrival</span>
-            <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/15 text-indigo-400">
-              <QrCode className="h-4.5 w-4.5" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-[10px] font-bold text-slate-500 hidden print:block">QR Code Arrival</h4>
-            <div className="text-3xl font-black text-white font-mono tracking-tight print-card-val">
-              {summary.qr_method} <span className="text-xs text-indigo-400 font-bold">({qrPercent}%)</span>
-            </div>
-            <p className="text-[10px] text-slate-500 font-semibold no-print">Scanned via mobile application</p>
-          </div>
-        </div>
 
         {/* Manual Administration Method */}
         <div className="rounded-2xl border border-slate-900 bg-slate-950 p-5 space-y-2 flex flex-col justify-between print-card">
@@ -370,44 +354,7 @@ export default function AdminReportsPage() {
 
       </div>
 
-      {/* SVG Circular engagement rate visualization (No-print) */}
-      <div className="rounded-2xl border border-slate-900 bg-slate-950 p-6 flex flex-col md:flex-row items-center gap-8 justify-around no-print">
-        
-        <div className="space-y-3 max-w-sm text-center md:text-left">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500/25 bg-indigo-500/5 text-[10px] font-bold text-indigo-400 uppercase tracking-wide">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>Scanning engagement</span>
-          </div>
-          <h3 className="text-base font-extrabold text-white">QR Scanning Preference</h3>
-          <p className="text-xs text-slate-500 leading-relaxed font-semibold">Campus organizations favor digital check-ins for events. Measuring digital adoption drives efficiency and cuts physical queues.</p>
-        </div>
 
-        {/* SVG Radial Gauge */}
-        <div className="relative h-40 w-40 flex items-center justify-center shrink-0">
-          <svg className="h-full w-full -rotate-90">
-            <circle 
-              cx="80" 
-              cy="80" 
-              r="60" 
-              className="fill-none stroke-slate-900 stroke-[12]" 
-            />
-            <circle 
-              cx="80" 
-              cy="80" 
-              r="60" 
-              className="fill-none stroke-indigo-600 stroke-[12] transition-all duration-1000 ease-out" 
-              strokeDasharray={`${2 * Math.PI * 60}`}
-              strokeDashoffset={`${2 * Math.PI * 60 * (1 - qrPercent / 100)}`}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-black text-white font-mono">{qrPercent}%</span>
-            <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest mt-0.5">App Scanner</span>
-          </div>
-        </div>
-
-      </div>
 
       {/* Printable Roster Sheet */}
       <div className="rounded-2xl border border-slate-900 bg-slate-950 overflow-hidden print-container">

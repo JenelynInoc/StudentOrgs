@@ -14,7 +14,14 @@ class OrganizationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Organization::with('members');
+        $query = Organization::with(['department'])->withCount([
+            'members as approved_members_count' => function ($query) {
+                $query->where('organization_members.status', 'approved');
+            },
+            'members as pending_members_count' => function ($query) {
+                $query->where('organization_members.status', 'pending');
+            }
+        ]);
 
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -53,6 +60,14 @@ class OrganizationController extends Controller
         ]);
 
         $organization = Organization::create($validated);
+
+        \App\Models\ActivityLog::create([
+            'action' => 'create_organization',
+            'model_type' => get_class($organization),
+            'model_id' => $organization->id,
+            'user_id' => null,
+            'properties' => ['name' => $organization->name],
+        ]);
 
         return response()->json([
             'message' => 'Organization created successfully',
@@ -95,6 +110,14 @@ class OrganizationController extends Controller
         $organization = Organization::findOrFail($id);
         $organization->delete();
 
+        \App\Models\ActivityLog::create([
+            'action' => 'delete_organization',
+            'model_type' => get_class($organization),
+            'model_id' => $organization->id,
+            'user_id' => null,
+            'properties' => ['name' => $organization->name],
+        ]);
+
         return response()->json(['message' => 'Organization deleted successfully']);
     }
 
@@ -108,6 +131,17 @@ class OrganizationController extends Controller
         $member->update([
             'status' => 'approved',
             'joined_at' => now(),
+        ]);
+
+        \App\Models\ActivityLog::create([
+            'action' => 'approve_membership',
+            'model_type' => get_class($member),
+            'model_id' => $member->id,
+            'user_id' => null, // Admins aren't in the users table, so this remains null
+            'properties' => [
+                'organization_id' => $organizationId,
+                'target_user_id' => $userId,
+            ],
         ]);
 
         return response()->json([

@@ -43,11 +43,6 @@ class Organization extends Model
         return $this->hasMany(OrganizationMember::class);
     }
 
-    public function officers(): HasMany
-    {
-        return $this->hasMany(Officer::class);
-    }
-
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);

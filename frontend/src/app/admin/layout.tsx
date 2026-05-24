@@ -61,6 +61,11 @@ export default function AdminLayout({
     );
   }
 
+  // Don't render the admin sidebar/header layout for the login page
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
       

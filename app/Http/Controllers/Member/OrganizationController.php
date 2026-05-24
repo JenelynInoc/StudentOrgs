@@ -36,6 +36,7 @@ class OrganizationController extends Controller
         $user = $request->user('member');
 
         $memberships = OrganizationMember::where('user_id', $user->id)
+            ->whereHas('organization')
             ->with(['organization' => function ($q) {
                 $q->with('department');
             }])

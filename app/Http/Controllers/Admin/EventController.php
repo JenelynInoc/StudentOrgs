@@ -67,6 +67,14 @@ class EventController extends Controller
 
         $event = Event::create($validated);
 
+        \App\Models\ActivityLog::create([
+            'action' => 'create_event',
+            'model_type' => get_class($event),
+            'model_id' => $event->id,
+            'user_id' => null,
+            'properties' => ['title' => $event->title, 'organization_id' => $event->organization_id],
+        ]);
+
         return response()->json([
             'message' => 'Event created successfully',
             'data' => $event,
@@ -108,6 +116,14 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
         $event->delete();
+
+        \App\Models\ActivityLog::create([
+            'action' => 'delete_event',
+            'model_type' => get_class($event),
+            'model_id' => $event->id,
+            'user_id' => null,
+            'properties' => ['title' => $event->title],
+        ]);
 
         return response()->json(['message' => 'Event deleted successfully']);
     }
@@ -167,6 +183,14 @@ class EventController extends Controller
                 'method' => 'manual',
             ]
         );
+
+        \App\Models\ActivityLog::create([
+            'action' => 'manual_checkin',
+            'model_type' => get_class($attendance),
+            'model_id' => $attendance->id,
+            'user_id' => null,
+            'properties' => ['event_id' => $event->id, 'student_id' => $user->student_id],
+        ]);
 
         return response()->json([
             'message' => 'Attendance registered successfully',

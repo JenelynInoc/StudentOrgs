@@ -117,7 +117,7 @@ export default function AdminMembersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-extrabold text-white tracking-tight">University Members Directory</h2>
-          <p className="text-xs text-slate-500">Search student profiles, adjust system roles, and manage account authorization status</p>
+          <p className="text-xs text-slate-500">Search student profiles and manage account authorization status</p>
         </div>
       </div>
 
@@ -194,7 +194,6 @@ export default function AdminMembersPage() {
                 <tr className="border-b border-slate-900 bg-slate-900/10 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
                   <th className="p-4 pl-6">Student Roster Details</th>
                   <th className="p-4">Student ID</th>
-                  <th className="p-4">Role Classification</th>
                   <th className="p-4">Account Status</th>
                   <th className="p-4">Register Date</th>
                   <th className="p-4 pr-6 text-right">Actions</th>
@@ -215,17 +214,6 @@ export default function AdminMembersPage() {
                       </div>
                     </td>
                     <td className="p-4 font-mono font-bold text-slate-400">{u.student_id || '—'}</td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-extrabold uppercase border ${
-                        u.role === 'admin' 
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/15' 
-                          : u.role === 'officer'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/15'
-                          : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/15'
-                      }`}>
-                        {u.role}
-                      </span>
-                    </td>
                     <td className="p-4">
                       {u.is_suspended ? (
                         <span className="px-2.5 py-0.5 rounded-lg text-[9px] font-extrabold uppercase border bg-red-500/10 text-red-400 border-red-500/15 inline-flex items-center gap-1">
