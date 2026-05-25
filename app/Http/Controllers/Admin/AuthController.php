@@ -35,6 +35,14 @@ class AuthController extends Controller
 
         $token = $admin->createToken('admin-token', ['admin'])->plainTextToken;
 
+        \App\Models\ActivityLog::create([
+            'action' => 'login',
+            'model_type' => get_class($admin),
+            'model_id' => $admin->id,
+            'user_id' => null,
+            'properties' => ['email' => $admin->email, 'ip' => $request->ip(), 'guard' => 'admin'],
+        ]);
+
         return response()->json([
             'message' => 'Login successful',
             'data' => [

@@ -15,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Student Organization Hub",
+  title: "SOMS",
   description: "A centralized platform for school organizations, events, memberships, and activities.",
 };
 
@@ -33,8 +33,8 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
-          <Toaster 
-            position="top-right" 
+          <Toaster
+            position="top-right"
             toastOptions={{
               style: {
                 background: '#0b0f19',

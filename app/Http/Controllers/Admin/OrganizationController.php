@@ -14,7 +14,7 @@ class OrganizationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Organization::with(['department'])->withCount([
+        $query = Organization::withCount([
             'members as approved_members_count' => function ($query) {
                 $query->where('organization_members.status', 'approved');
             },
@@ -55,7 +55,6 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'department_id' => 'nullable|exists:departments,id',
             'status' => 'required|in:active,inactive',
         ]);
 
@@ -92,7 +91,6 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'department_id' => 'nullable|exists:departments,id',
             'status' => 'sometimes|in:active,inactive',
             'logo' => 'nullable|string',
         ]);
@@ -147,15 +145,6 @@ class OrganizationController extends Controller
         return response()->json([
             'message' => 'Member approved successfully',
             'data' => $member,
-        ]);
-    }
-
-    public function departments(): JsonResponse
-    {
-        $departments = \App\Models\Department::all();
-        return response()->json([
-            'message' => 'Departments retrieved successfully',
-            'data' => $departments,
         ]);
     }
 

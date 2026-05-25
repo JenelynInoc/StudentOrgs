@@ -13,10 +13,10 @@ export default function LandingPage() {
       <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-tr from-violet-600 to-cyan-500 text-white font-bold text-lg shadow-md shadow-violet-500/20">
-            S
+
           </div>
           <span className="text-xl font-bold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-            StudentOrg Hub
+            StudentOrgs
           </span>
         </div>
 
@@ -24,8 +24,8 @@ export default function LandingPage() {
           <Link href="/login" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
             Login
           </Link>
-          <Link 
-            href="/register" 
+          <Link
+            href="/register"
             className="flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800 text-sm font-semibold text-white px-4 py-2 transition-all"
           >
             Register
@@ -49,14 +49,14 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center w-full max-w-xs sm:max-w-none">
-          <Link 
-            href="/login" 
+          <Link
+            href="/login"
             className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all hover:from-violet-500 hover:to-cyan-400 hover:shadow-violet-500/30 hover:scale-[1.02]"
           >
             Explore Dashboard <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link 
-            href="/register" 
+          <Link
+            href="/register"
             className="flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-900 hover:border-slate-700 px-6 py-3.5 text-sm font-semibold text-slate-300 hover:text-white transition-all"
           >
             Create Student Account
@@ -99,7 +99,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-slate-900 text-center text-xs text-slate-500">
-        &copy; {new Date().getFullYear()} Student Organization Hub. Developed in Laravel & Next.js.
+        &copy; {new Date().getFullYear()} StudentOrgs. Developed in Laravel & Next.js.
       </footer>
     </div>
   );

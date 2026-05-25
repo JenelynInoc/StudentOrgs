@@ -122,9 +122,6 @@ export default function OrganizationDetails() {
       <div className="rounded-2xl border border-slate-800 bg-slate-900/10 backdrop-blur-md p-6 sm:p-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1 rounded-full border border-violet-500/20 bg-violet-500/5 text-[9px] font-extrabold text-violet-400 tracking-wider uppercase">
-              {orgData.department?.name || 'General'}
-            </span>
             <span className="text-xs text-slate-500 font-mono tracking-wider font-bold">
               {orgData.acronym || orgData.name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase()}
             </span>
@@ -240,33 +237,7 @@ export default function OrganizationDetails() {
         {/* Side Officers Column */}
         <div className="space-y-6">
           
-          {/* Officers roster details widget */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/10 backdrop-blur-md p-6 shadow-xl space-y-4">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Award className="h-4.5 w-4.5 text-amber-400" /> Executive Council
-            </h3>
-            <div className="space-y-3.5">
-              {!orgData.officers || orgData.officers.length === 0 ? (
-                <p className="text-xs text-slate-500 font-medium">No officers listed on roster details yet.</p>
-              ) : (
-                orgData.officers.map((off: any) => (
-                  <div key={off.id} className="flex items-center gap-3">
-                    {off.user?.avatar ? (
-                      <img src={off.user.avatar} alt={off.user.name} className="h-8.5 w-8.5 rounded-full object-cover border border-slate-850" />
-                    ) : (
-                      <div className="h-8.5 w-8.5 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400">
-                        {off.user?.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-xs font-bold text-white block">{off.user?.name || 'Officer'}</span>
-                      <span className="text-[10px] text-amber-400 font-bold tracking-wide">{off.officer_title || 'Officer'}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+
 
           {/* Quick contact values */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900/10 backdrop-blur-md p-6 shadow-xl space-y-3">

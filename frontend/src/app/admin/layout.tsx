@@ -81,7 +81,7 @@ export default function AdminLayout({
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="font-bold tracking-tight text-white text-base">SOMS Admin</h1>
+            <h1 className="font-bold tracking-tight text-white text-base">StudentOrgs</h1>
             <p className="text-[10px] font-semibold tracking-wider text-indigo-400 uppercase">Management Portal</p>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function AdminLayout({
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <span className="font-bold tracking-tight text-white text-sm">SOMS Admin</span>
+            <span className="font-bold tracking-tight text-white text-sm">StudentOrgs</span>
           </div>
           <button onClick={() => setIsMobileOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
             <X className="h-5 w-5" />

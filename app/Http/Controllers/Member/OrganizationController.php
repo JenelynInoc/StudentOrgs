@@ -13,7 +13,7 @@ class OrganizationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Organization::where('status', 'active')->with('department');
+        $query = Organization::where('status', 'active');
 
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -37,9 +37,7 @@ class OrganizationController extends Controller
 
         $memberships = OrganizationMember::where('user_id', $user->id)
             ->whereHas('organization')
-            ->with(['organization' => function ($q) {
-                $q->with('department');
-            }])
+            ->with(['organization'])
             ->get();
 
         return response()->json([
@@ -51,7 +49,6 @@ class OrganizationController extends Controller
     public function show(string $id, Request $request): JsonResponse
     {
         $organization = Organization::where('status', 'active')
-            ->with(['department', 'officers.user'])
             ->findOrFail($id);
 
         $user = $request->user('member');

@@ -4,14 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminAuthStore } from '@/store/adminAuthStore';
 import api from '@/services/api';
-import { 
-  Users, 
-  Building2, 
-  Calendar, 
-  AlertCircle, 
-  UserX, 
-  ArrowUpRight, 
-  Clock, 
+import {
+  Users,
+  Building2,
+  Calendar,
+  AlertCircle,
+  UserX,
+  ArrowUpRight,
+  Clock,
   Activity,
   CalendarDays,
   ChevronRight
@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
       <div className="space-y-8 animate-pulse">
         {/* Banner skeleton */}
         <div className="h-32 rounded-3xl bg-slate-900/60 border border-slate-800" />
-        
+
         {/* Stats Grid skeleton */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      
+
       {/* Welcome Hero Banner */}
       <div className="relative rounded-3xl overflow-hidden border border-slate-900 bg-gradient-to-r from-indigo-900/20 via-slate-950/20 to-slate-950 p-8 sm:p-10 shadow-2xl">
         <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
@@ -203,16 +203,16 @@ export default function AdminDashboardPage() {
 
       {/* Analytics Visualizers & List Feeds */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        
+
         {/* SVG Custom Charts Container */}
         <div className="lg:col-span-2 rounded-3xl border border-slate-900 bg-slate-950 p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-extrabold text-white">Event Scheduling Breakdown</h3>
-              <p className="text-xs text-slate-500">Live summary of events recorded across departments</p>
+              <p className="text-xs text-slate-500">Live summary of events recorded across organizations</p>
             </div>
-            <Link 
-              href="/admin/events" 
+            <Link
+              href="/admin/events"
               className="text-xs font-bold text-indigo-400 hover:text-indigo-350 flex items-center gap-1 hover:underline transition-colors"
             >
               Manage Events <ArrowUpRight className="h-3.5 w-3.5" />
@@ -226,27 +226,27 @@ export default function AdminDashboardPage() {
               {/* Draw a gorgeous SVG Semi-Donut or Radial Chart */}
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="40" stroke="#0f172a" strokeWidth="10" fill="transparent" />
-                
+
                 {/* Upcoming segment */}
-                <circle 
-                  cx="50" 
-                  cy="50" 
-                  r="40" 
-                  stroke="#6366f1" 
-                  strokeWidth="10" 
-                  fill="transparent" 
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="#6366f1"
+                  strokeWidth="10"
+                  fill="transparent"
                   strokeDasharray={`${(upcomingCount / maxEventVal) * 125} 251`}
                   strokeDashoffset="0"
                 />
 
                 {/* Completed segment */}
-                <circle 
-                  cx="50" 
-                  cy="50" 
-                  r="40" 
-                  stroke="#10b981" 
-                  strokeWidth="10" 
-                  fill="transparent" 
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="#10b981"
+                  strokeWidth="10"
+                  fill="transparent"
                   strokeDasharray={`${(completedCount / maxEventVal) * 70} 251`}
                   strokeDashoffset={`-${(upcomingCount / maxEventVal) * 125}`}
                 />
@@ -304,8 +304,8 @@ export default function AdminDashboardPage() {
                 <h4 className="text-sm font-extrabold text-white">Platform Activity Audits</h4>
                 <p className="text-[11px] text-slate-500">Latest admin operations and authentication tracks</p>
               </div>
-              <Link 
-                href="/admin/activity-logs" 
+              <Link
+                href="/admin/activity-logs"
                 className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-0.5"
               >
                 View all <ChevronRight className="h-3.5 w-3.5" />
@@ -368,13 +368,12 @@ export default function AdminDashboardPage() {
                         <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                         {new Date(ev.start_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
-                      <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${
-                        ev.status === 'ongoing' 
-                          ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' 
-                          : ev.status === 'completed'
+                      <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${ev.status === 'ongoing'
+                        ? 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                        : ev.status === 'completed'
                           ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                           : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
-                      }`}>
+                        }`}>
                         {ev.status}
                       </span>
                     </div>
@@ -382,11 +381,11 @@ export default function AdminDashboardPage() {
                     <h4 className="text-xs font-bold text-white group-hover:text-indigo-400 transition-colors pt-1">
                       {ev.title}
                     </h4>
-                    
+
                     <p className="text-[10px] text-slate-500">
                       Venue: <span className="font-semibold text-slate-400">{ev.venue || 'TBD'}</span>
                     </p>
-                    
+
                     {ev.organization && (
                       <p className="text-[9px] font-bold text-indigo-500/60 uppercase tracking-wider">
                         By {ev.organization.name}

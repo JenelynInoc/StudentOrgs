@@ -42,7 +42,6 @@ interface OrgDetail {
   description: string | null;
   status: 'active' | 'inactive';
   created_at: string;
-  department?: { name: string; code: string };
   members: Member[];
   events: EventItem[];
 }
@@ -165,11 +164,6 @@ export default function AdminOrganizationDetailPage() {
             }`}>
               {org.status}
             </span>
-            {org.department && (
-              <span className="font-mono text-indigo-400 font-bold bg-indigo-500/10 border border-indigo-500/15 px-2 py-0.5 rounded text-[10px]">
-                {org.department.code} Department
-              </span>
-            )}
           </div>
           <p className="text-xs text-slate-400 max-w-2xl">{org.description || 'No description cataloged for this organization.'}</p>
         </div>

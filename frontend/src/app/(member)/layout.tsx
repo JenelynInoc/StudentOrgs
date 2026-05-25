@@ -4,16 +4,16 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { 
-  LayoutDashboard, 
-  Compass, 
-  Calendar, 
-  User, 
-  LogOut, 
-  Bell, 
-  Menu, 
-  X, 
-  Check, 
+import {
+  LayoutDashboard,
+  Compass,
+  Calendar,
+  User,
+  LogOut,
+  Bell,
+  Menu,
+  X,
+  Check,
   CheckSquare
 } from 'lucide-react';
 import { useMemberAuthStore } from '@/store/memberAuthStore';
@@ -23,7 +23,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
   const { user, clearUser, token } = useMemberAuthStore();
-  
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -75,7 +75,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   const handleMarkAsRead = async (id: string) => {
     try {
       await api.patch(`/member/notifications/${id}/read`);
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, read: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -137,7 +137,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="flex min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 overflow-hidden">
-      
+
       {/* Dynamic Background Accent Glows */}
       <div className="absolute top-0 left-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-violet-600/5 blur-[120px]" />
       <div className="absolute bottom-1/4 right-1/4 -z-10 h-[400px] w-[400px] rounded-full bg-cyan-600/5 blur-[100px]" />
@@ -152,7 +152,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 S
               </div>
               <span className="font-bold tracking-tight text-white text-lg bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                StudentOrg Hub
+                StudentOrgs
               </span>
             </Link>
           </div>
@@ -166,11 +166,10 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border ${
-                    isActive
-                      ? 'bg-violet-600/10 border-violet-500/20 text-violet-400 shadow-inner'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900/40 border-transparent hover:border-slate-800/30'
-                  }`}
+                  className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border ${isActive
+                    ? 'bg-violet-600/10 border-violet-500/20 text-violet-400 shadow-inner'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900/40 border-transparent hover:border-slate-800/30'
+                    }`}
                 >
                   <Icon className="h-4.5 w-4.5" />
                   {item.name}
@@ -184,9 +183,9 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         <div className="p-4 border-t border-slate-800/60 flex flex-col gap-3">
           <Link href="/profile" className="flex items-center gap-3 px-2 group">
             {user.avatar ? (
-              <img 
-                src={user.avatar} 
-                alt={user.name} 
+              <img
+                src={user.avatar}
+                alt={user.name}
                 className="h-9 w-9 rounded-full object-cover border border-violet-500/30 group-hover:scale-105 transition-transform duration-200"
               />
             ) : (
@@ -199,7 +198,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               <p className="text-[10px] text-slate-500 truncate font-mono">Student Account</p>
             </div>
           </Link>
-          <button 
+          <button
             onClick={handleLogout}
             className="flex items-center justify-center gap-2 w-full py-2.5 border border-slate-800/80 hover:border-red-500/30 hover:bg-red-500/5 hover:text-red-400 rounded-xl text-xs font-semibold text-slate-400 transition-all duration-200"
           >
@@ -210,7 +209,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
       {/* Main Panel Content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        
+
         {/* Navigation Header */}
         <header className="h-16 border-b border-slate-800/60 bg-slate-950/20 backdrop-blur-md px-6 flex items-center justify-between z-10">
           <div className="flex items-center gap-4">
@@ -221,10 +220,10 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               <Menu className="h-5 w-5" />
             </button>
             <h2 className="text-sm font-bold text-white tracking-widest uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-              {pathname === '/dashboard' ? 'Overview Dashboard' : 
-               pathname.startsWith('/organizations') ? 'Explore Clubs' :
-               pathname.startsWith('/events') ? 'Club Events' :
-               pathname.startsWith('/profile') ? 'Profile settings' : 'Student Hub'}
+              {pathname === '/dashboard' ? 'Overview Dashboard' :
+                pathname.startsWith('/organizations') ? 'Explore Clubs' :
+                  pathname.startsWith('/events') ? 'Club Events' :
+                    pathname.startsWith('/profile') ? 'Profile settings' : 'Student Hub'}
             </h2>
           </div>
 
@@ -248,7 +247,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                   <div className="flex items-center justify-between pb-3 border-b border-slate-900 mb-2">
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider">Notifications</h3>
                     {unreadCount > 0 && (
-                      <button 
+                      <button
                         onClick={handleMarkAllAsRead}
                         className="text-[10px] font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
                       >
@@ -264,13 +263,12 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                       </div>
                     ) : (
                       notifications.map((n) => (
-                        <div 
-                          key={n.id} 
-                          className={`p-2.5 rounded-xl border text-xs transition-all relative ${
-                            n.read 
-                              ? 'bg-slate-950/40 border-slate-900 text-slate-400' 
-                              : 'bg-violet-600/5 border-violet-500/15 text-white'
-                          }`}
+                        <div
+                          key={n.id}
+                          className={`p-2.5 rounded-xl border text-xs transition-all relative ${n.read
+                            ? 'bg-slate-950/40 border-slate-900 text-slate-400'
+                            : 'bg-violet-600/5 border-violet-500/15 text-white'
+                            }`}
                         >
                           <p className="font-medium pr-4">{n.data?.message || 'New notification'}</p>
                           <span className="text-[9px] text-slate-500 font-mono block mt-1">
@@ -315,7 +313,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           {/* Backdrop mask */}
-          <div 
+          <div
             onClick={() => setIsMobileMenuOpen(false)}
             className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
           />
@@ -326,9 +324,9 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-violet-600 to-cyan-500 text-white font-bold text-sm">
                   S
                 </div>
-                <span className="font-bold text-white tracking-tight">StudentOrg Hub</span>
+                <span className="font-bold text-white tracking-tight">StudentOrgs</span>
               </div>
-              <button 
+              <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-1 rounded-lg border border-slate-800 hover:bg-slate-900 text-slate-400 hover:text-white"
               >
@@ -346,11 +344,10 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border ${
-                      isActive
-                        ? 'bg-violet-600/10 border-violet-500/20 text-violet-400'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-900 border-transparent hover:border-slate-850'
-                    }`}
+                    className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border ${isActive
+                      ? 'bg-violet-600/10 border-violet-500/20 text-violet-400'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900 border-transparent hover:border-slate-850'
+                      }`}
                   >
                     <Icon className="h-4.5 w-4.5" />
                     {item.name}
@@ -374,7 +371,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                   <p className="text-[10px] text-slate-500 truncate font-mono">Student Account</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="flex items-center justify-center gap-2 w-full py-2.5 border border-slate-850 hover:bg-red-500/5 hover:border-red-500/20 hover:text-red-400 rounded-xl text-xs font-semibold text-slate-400 transition-all duration-200"
               >

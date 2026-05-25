@@ -21,24 +21,16 @@ import {
 interface OrganizationItem {
   id: string;
   name: string;
-  description: string | null;
-  department_id: string | null;
   status: 'active' | 'inactive';
   created_at: string;
-  department?: { name: string; code: string };
   approved_members_count?: number;
   pending_members_count?: number;
 }
 
-interface Department {
-  id: string;
-  name: string;
-  code: string;
-}
+
 
 export default function AdminOrganizationsPage() {
   const [orgs, setOrgs] = useState<OrganizationItem[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +52,6 @@ export default function AdminOrganizationsPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    department_id: '',
     status: 'active' as 'active' | 'inactive',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -92,22 +83,13 @@ export default function AdminOrganizationsPage() {
     }
   };
 
-  const fetchDepartments = async () => {
-    try {
-      const res = await api.get('/admin/departments');
-      setDepartments(res.data.data);
-    } catch (err) {
-      console.error('Failed to load departments list:', err);
-    }
-  };
+
 
   useEffect(() => {
     fetchOrgs();
   }, [currentPage, statusFilter]);
 
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
+
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +121,6 @@ export default function AdminOrganizationsPage() {
       const payload = {
         name: formData.name,
         description: formData.description || null,
-        department_id: formData.department_id || null,
         status: formData.status,
       };
 
@@ -161,7 +142,6 @@ export default function AdminOrganizationsPage() {
     setFormData({
       name: org.name,
       description: org.description || '',
-      department_id: org.department_id || '',
       status: org.status,
     });
     setFormErrors({});
@@ -177,7 +157,6 @@ export default function AdminOrganizationsPage() {
       const payload = {
         name: formData.name,
         description: formData.description || null,
-        department_id: formData.department_id || null,
         status: formData.status,
       };
 
@@ -211,7 +190,6 @@ export default function AdminOrganizationsPage() {
     setFormData({
       name: '',
       description: '',
-      department_id: '',
       status: 'active',
     });
     setFormErrors({});
@@ -302,7 +280,7 @@ export default function AdminOrganizationsPage() {
               <thead>
                 <tr className="border-b border-slate-900 bg-slate-900/10 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
                   <th className="p-4 pl-6">Organization Details</th>
-                  <th className="p-4">Department Affiliation</th>
+
                   <th className="p-4">Roster Enrollment</th>
                   <th className="p-4">Status</th>
                   <th className="p-4">Created Date</th>
@@ -323,15 +301,7 @@ export default function AdminOrganizationsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="p-4">
-                      {org.department ? (
-                        <span className="font-mono text-slate-400 font-bold bg-slate-900/40 border border-slate-900 px-2 py-0.5 rounded text-[10px]" title={org.department.name}>
-                          {org.department.code}
-                        </span>
-                      ) : (
-                        <span className="text-slate-500 text-[10px]">None</span>
-                      )}
-                    </td>
+
                     <td className="p-4">
                       <div className="font-mono font-bold text-indigo-400">
                         {org.approved_members_count || 0} members
@@ -451,20 +421,7 @@ export default function AdminOrganizationsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 mb-1.5 uppercase tracking-wider">Department Affiliation</label>
-                <select
-                  name="department_id"
-                  value={formData.department_id}
-                  onChange={handleInputChange}
-                  className="w-full rounded-xl border border-slate-900 bg-slate-900/10 py-2.5 px-3 text-xs text-slate-200 outline-none focus:border-indigo-500 focus:bg-slate-900/20 appearance-none cursor-pointer"
-                >
-                  <option value="">No Department Affiliation (Independent)</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>
-                  ))}
-                </select>
-              </div>
+
 
               <div>
                 <label className="block text-[10px] font-extrabold text-slate-500 mb-1.5 uppercase tracking-wider">Status</label>
@@ -535,20 +492,7 @@ export default function AdminOrganizationsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-[10px] font-extrabold text-slate-500 mb-1.5 uppercase tracking-wider">Department Affiliation</label>
-                <select
-                  name="department_id"
-                  value={formData.department_id}
-                  onChange={handleInputChange}
-                  className="w-full rounded-xl border border-slate-900 bg-slate-900/10 py-2.5 px-3 text-xs text-slate-200 outline-none focus:border-indigo-500 focus:bg-slate-900/20 appearance-none cursor-pointer"
-                >
-                  <option value="">No Department Affiliation (Independent)</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>
-                  ))}
-                </select>
-              </div>
+
 
               <div>
                 <label className="block text-[10px] font-extrabold text-slate-500 mb-1.5 uppercase tracking-wider">Status</label>

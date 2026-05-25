@@ -17,7 +17,6 @@ class Organization extends Model
     protected $fillable = [
         'name',
         'description',
-        'department_id',
         'logo',
         'status',
     ];
@@ -25,11 +24,6 @@ class Organization extends Model
     protected $casts = [
         'status' => 'string',
     ];
-
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(Department::class);
-    }
 
     public function members(): BelongsToMany
     {

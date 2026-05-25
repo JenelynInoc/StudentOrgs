@@ -194,7 +194,7 @@ export default function EventDetails() {
                   {eventData.organization?.name}
                 </h4>
                 <p className="text-xs text-slate-400 leading-relaxed font-medium mt-1">
-                  {eventData.organization?.description || 'Learn more about this club\'s activities and department.'}
+                  {eventData.organization?.description || 'Learn more about this club\'s activities.'}
                 </p>
               </div>
               <Link

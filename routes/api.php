@@ -34,7 +34,6 @@ Route::middleware(['auth:sanctum', 'admin.guard'])->group(function () {
     Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy']);
 
     // Admin: Organizations
-    Route::get('/admin/departments', [AdminOrganizationController::class, 'departments']);
     Route::get('/admin/organizations', [AdminOrganizationController::class, 'index']);
     Route::post('/admin/organizations', [AdminOrganizationController::class, 'store']);
     Route::get('/admin/organizations/{id}', [AdminOrganizationController::class, 'show']);

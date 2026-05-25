@@ -24,7 +24,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
               S
             </div>
             <span className="text-xl font-bold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-              StudentOrg Hub
+              StudentOrgs
             </span>
           </Link>
         </div>

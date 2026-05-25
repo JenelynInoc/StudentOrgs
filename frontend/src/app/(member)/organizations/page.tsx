@@ -11,10 +11,8 @@ import api from '@/services/api';
 export default function ExploreOrganizations() {
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [myMemberships, setMyMemberships] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -32,15 +30,7 @@ export default function ExploreOrganizations() {
         setMyMemberships(mineRes.data.data);
       }
 
-      // 3. Extract unique departments from the organizations list or fetch them if endpoint exists
-      // In SOMS Admin, we retrieved all departments from /api/admin/departments. Let's extract them dynamically 
-      // from the organization records to be safe and avoid hitting admin protected routes.
-      if (orgsRes.data?.data) {
-        const uniqueDeps = Array.from(
-          new Map(orgsRes.data.data.map((item: any) => [item.department?.id, item.department])).values()
-        ).filter(Boolean);
-        setDepartments(uniqueDeps);
-      }
+
     } catch (error) {
       console.error('Failed to load explore organizations data', error);
       toast.error('Failed to load campus organizations');
@@ -84,11 +74,7 @@ export default function ExploreOrganizations() {
       (org.acronym || org.name.split(' ').filter(Boolean).map((n: string) => n[0]).join('')).toLowerCase().includes(searchQuery.toLowerCase()) ||
       org.description?.toLowerCase().includes(searchQuery.toLowerCase());
       
-    const matchesDept = 
-      selectedDepartment === 'all' || 
-      org.department?.id === selectedDepartment;
-
-    return matchesSearch && matchesDept;
+    return matchesSearch;
   });
 
   if (loading) {
@@ -130,22 +116,7 @@ export default function ExploreOrganizations() {
           />
         </div>
 
-        {/* Category selections */}
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <span className="text-xs text-slate-500 font-bold hidden sm:inline">Department:</span>
-          <select
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="w-full sm:w-auto rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-300 outline-none focus:border-violet-500 font-medium transition-all"
-          >
-            <option value="all">All Departments</option>
-            {departments.map((dept: any) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
-        </div>
+
       </div>
 
       {/* Grid listing */}
@@ -154,7 +125,7 @@ export default function ExploreOrganizations() {
           <ShieldAlert className="h-10 w-10 text-slate-500 mx-auto mb-3" />
           <h4 className="text-sm font-bold text-white uppercase tracking-wider">No Organizations Found</h4>
           <p className="text-xs text-slate-500 max-w-sm mx-auto mt-2 leading-relaxed">
-            No active student clubs match your current search queries or department filtering selections.
+            No active student clubs match your current search queries.
           </p>
         </div>
       ) : (
@@ -169,9 +140,7 @@ export default function ExploreOrganizations() {
                 <div>
                   {/* Card Header badges */}
                   <div className="flex justify-between items-start mb-4 gap-2">
-                    <span className="px-3 py-1 rounded-full border border-violet-500/20 bg-violet-500/5 text-[9px] font-extrabold text-violet-400 tracking-wider uppercase">
-                      {org.department?.name || 'General'}
-                    </span>
+
                     {status && (
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
                         status === 'approved' 

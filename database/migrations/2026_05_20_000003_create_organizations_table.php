@@ -15,10 +15,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->foreignUuid('department_id')
-                ->nullable()
-                ->constrained('departments')
-                ->nullOnDelete();
             $table->string('logo')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
