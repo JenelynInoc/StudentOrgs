@@ -93,6 +93,11 @@ class UserController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $user = User::findOrFail($id);
+
+        // Clean up all organization membership records for this user
+        // so they don't leave ghost "pending" counts on the dashboard.
+        \App\Models\OrganizationMember::where('user_id', $user->id)->delete();
+
         $user->delete();
 
         return response()->json(['message' => 'User deleted successfully']);

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -38,6 +39,13 @@ class User extends Authenticatable
         ];
     }
 
+    protected function avatar(): Attribute
+    {
+        return Attribute::make(
+            get: fn (string|null $value) => $value ? url($value) : null,
+        );
+    }
+
     public function organizationMembers(): HasMany
     {
         return $this->hasMany(OrganizationMember::class);
@@ -50,10 +58,6 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    public function officers(): HasMany
-    {
-        return $this->hasMany(Officer::class);
-    }
 
     public function attendance(): HasMany
     {

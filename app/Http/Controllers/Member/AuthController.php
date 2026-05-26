@@ -36,6 +36,14 @@ class AuthController extends Controller
 
         $token = $user->createToken('member-token', ['member'])->plainTextToken;
 
+        \App\Models\ActivityLog::create([
+            'action' => 'register',
+            'model_type' => get_class($user),
+            'model_id' => $user->id,
+            'user_id' => $user->id,
+            'properties' => ['email' => $user->email, 'ip' => $request->ip()],
+        ]);
+
         return response()->json([
             'message' => 'Registration successful',
             'data' => [

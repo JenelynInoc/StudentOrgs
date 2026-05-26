@@ -21,6 +21,7 @@ import {
 interface OrganizationItem {
   id: string;
   name: string;
+  description?: string;
   status: 'active' | 'inactive';
   created_at: string;
   approved_members_count?: number;
@@ -203,7 +204,7 @@ export default function AdminOrganizationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-extrabold text-white tracking-tight">System Organizations Portal</h2>
-          <p className="text-xs text-slate-500">Register new campus groups, assign department affiliations, and audit active directories</p>
+          <p className="text-xs text-slate-500">Register new campus groups and audit active directories</p>
         </div>
         <button
           onClick={() => { resetForm(); setIsAddModalOpen(true); }}

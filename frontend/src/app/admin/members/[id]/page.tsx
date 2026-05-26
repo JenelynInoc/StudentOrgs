@@ -23,7 +23,8 @@ interface UserDetail {
   name: string;
   email: string;
   student_id: string | null;
-  role: 'student' | 'officer' | 'admin';
+  avatar?: string | null;
+  role: 'student' | 'admin';
   is_suspended: boolean;
   created_at: string;
   updated_at: string;
@@ -142,8 +143,12 @@ export default function AdminMemberDetailPage() {
             <div className="absolute top-0 right-0 -translate-y-8 translate-x-8 h-32 w-32 rounded-full bg-indigo-500/5 blur-xl pointer-events-none" />
             
             {/* Avatar block */}
-            <div className="h-20 w-20 rounded-2xl bg-indigo-600/10 border border-indigo-500/25 flex items-center justify-center font-black text-2xl text-indigo-400 shrink-0 shadow-lg shadow-indigo-500/5">
-              {userDetail.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            <div className="h-20 w-20 rounded-2xl bg-indigo-600/10 border border-indigo-500/25 flex items-center justify-center font-black text-2xl text-indigo-400 shrink-0 shadow-lg shadow-indigo-500/5 overflow-hidden">
+              {userDetail.avatar ? (
+                <img src={userDetail.avatar} alt={userDetail.name} className="h-full w-full object-cover" />
+              ) : (
+                userDetail.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+              )}
             </div>
 
             <h3 className="text-lg font-extrabold text-white tracking-tight mt-4">{userDetail.name}</h3>

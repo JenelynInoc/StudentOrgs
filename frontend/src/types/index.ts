@@ -2,7 +2,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'student' | 'officer' | 'admin';
+  role: 'student' | 'admin';
   student_id?: string;
   memberships?: Membership[];
   created_at: string;
@@ -33,8 +33,7 @@ export interface Membership {
   user?: User;
   organization_id: number;
   organization?: Organization;
-  role: 'member' | 'officer';
-  officer_title?: string;
+  role: 'member';
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
 }

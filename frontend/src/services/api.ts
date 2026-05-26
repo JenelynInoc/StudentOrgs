@@ -35,17 +35,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear tokens and redirect to appropriate login page
+      // Clear ONLY the token for the portal that triggered the 401 error
       if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname;
-        localStorage.removeItem('admin_token');
-        localStorage.removeItem('member_token');
-        document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
-        document.cookie = 'member_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
 
         if (currentPath.startsWith('/admin')) {
+          localStorage.removeItem('admin_token');
+          document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
           window.location.href = '/admin/login';
         } else {
+          localStorage.removeItem('member_token');
+          document.cookie = 'member_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
           window.location.href = '/login';
         }
       }

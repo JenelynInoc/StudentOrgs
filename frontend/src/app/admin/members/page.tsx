@@ -23,7 +23,8 @@ interface UserItem {
   name: string;
   email: string;
   student_id: string | null;
-  role: 'student' | 'officer' | 'admin';
+  avatar?: string | null;
+  role: 'student' | 'admin';
   is_suspended: boolean;
   created_at: string;
 }
@@ -204,8 +205,12 @@ export default function AdminMembersPage() {
                   <tr key={u.id} className="hover:bg-slate-900/10 transition-colors group">
                     <td className="p-4 pl-6">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-slate-900 border border-slate-850 flex items-center justify-center font-bold text-slate-400">
-                          {u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        <div className="h-9 w-9 rounded-xl bg-slate-900 border border-slate-850 flex items-center justify-center font-bold text-slate-400 overflow-hidden">
+                          {u.avatar ? (
+                            <img src={u.avatar} alt={u.name} className="h-full w-full object-cover" />
+                          ) : (
+                            u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                          )}
                         </div>
                         <div className="overflow-hidden min-w-0">
                           <p className="font-bold text-white group-hover:text-indigo-400 transition-colors truncate">{u.name}</p>

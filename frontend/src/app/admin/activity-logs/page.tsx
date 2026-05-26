@@ -154,6 +154,7 @@ export default function AdminActivityLogsPage() {
             >
               <option value="all">All Actions</option>
               <option value="login">User Login</option>
+              <option value="register">User Registered</option>
               <option value="suspend">User Suspended</option>
               <option value="restore">User Restored</option>
               <option value="approve_membership">Membership Approval</option>

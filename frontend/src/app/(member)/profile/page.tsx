@@ -24,6 +24,7 @@ export default function MemberProfile() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -58,13 +59,41 @@ export default function MemberProfile() {
     setErrors({});
 
     try {
+      // 1. Update text profile details
+      let updatedUser = user;
       const response = await api.put('/member/profile', formData);
       if (response.data?.data) {
-        setUser(response.data.data);
-        toast.success('Profile details updated successfully!');
+        updatedUser = response.data.data;
       }
+
+      // 2. Upload avatar if a new one was selected
+      if (selectedAvatarFile) {
+        setIsUploading(true);
+        const uploadData = new FormData();
+        uploadData.append('avatar', selectedAvatarFile);
+
+        const avatarResponse = await api.post('/member/profile/avatar', uploadData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        if (avatarResponse.data?.data) {
+          updatedUser = avatarResponse.data.data;
+        }
+        setIsUploading(false);
+        setSelectedAvatarFile(null); // Clear selected file after successful upload
+      }
+
+      // Update global state and notify user
+      if (updatedUser) {
+        setUser(updatedUser);
+        toast.success('Profile saved successfully!');
+      }
+
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Failed to update profile';
+      setIsUploading(false);
+      const msg = error.response?.data?.message || 'Failed to save profile';
       const errorDetails = error.response?.data?.errors;
 
       if (errorDetails) {
@@ -77,61 +106,39 @@ export default function MemberProfile() {
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    await uploadAvatarFile(files[0]);
+    prepareAvatarFile(files[0]);
   };
 
-  const uploadAvatarFile = async (file: File) => {
+  const prepareAvatarFile = (file: File) => {
     // 2MB size check
     if (file.size > 2 * 1024 * 1024) {
       toast.error('Image exceeds 2MB maximum limit');
       return;
     }
-
-    setIsUploading(true);
     
+    // Store file in state for later upload
+    setSelectedAvatarFile(file);
+
     // Set immediate client preview
     const reader = new FileReader();
     reader.onload = () => {
       setAvatarPreview(reader.result as string);
     };
     reader.readAsDataURL(file);
-
-    try {
-      const uploadData = new FormData();
-      uploadData.append('avatar', file);
-
-      const response = await api.post('/member/profile/avatar', uploadData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (response.data?.data) {
-        setUser(response.data.data);
-        toast.success('Avatar picture uploaded successfully!');
-      }
-    } catch (error: any) {
-      console.error('Avatar upload failed', error);
-      toast.error(error.response?.data?.message || 'Failed to upload image file');
-      // Revert preview on failure
-      setAvatarPreview(user?.avatar || null);
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDrop = async (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      await uploadAvatarFile(files[0]);
+      prepareAvatarFile(files[0]);
     }
   };
 
